@@ -36,9 +36,8 @@
     const d = new Date(ts);
     const today = new Date(); const y = new Date(Date.now() - 864e5);
     const same = (a, b) => a.toDateString() === b.toDateString();
-    const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    if (same(d, today)) return `Heute · ${time}`;
-    if (same(d, y)) return `Gestern · ${time}`;
+    if (same(d, today)) return 'Heute';
+    if (same(d, y)) return 'Gestern';
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
   }
   function esc(s) { return (s || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
@@ -101,8 +100,8 @@
             <div class="dots">${recentDots}</div>
           </div>
           <div class="rec-pill ${rec.move === 'C' ? 'c' : 'd'}">
-            <span class="rp-move">${rec.move === 'C' ? 'Koop.' : 'Zurück'}</span>
-            <span class="rp-label">${rec.move === 'C' ? '✓ nächster Zug' : '✕ nächster Zug'}</span>
+            <span class="rp-label">Dein nächster Zug</span>
+            <span class="rp-move">${rec.move === 'C' ? 'Kooperieren' : 'Nicht kooperieren'}</span>
           </div>
         </li>`);
       card.addEventListener('click', () => openDetail(p.id));
@@ -334,12 +333,12 @@
     for (const pp of people) for (const r of pp.rounds) if (r.topic && r.topic.trim()) set.add(r.topic.trim());
     return [...set].sort((a, b) => a.localeCompare(b, 'de'));
   }
-  // Timestamp <-> <input type="datetime-local">
-  function toLocalInput(ts) {
+  // Timestamp <-> <input type="date"> (nur Datum, ohne Uhrzeit)
+  function toDateInput(ts) {
     const d = new Date(ts); const p = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   }
-  function fromLocalInput(v) { const t = Date.parse(v); return Number.isNaN(t) ? null : t; }
+  function fromDateInput(v) { const t = Date.parse(`${v}T12:00`); return Number.isNaN(t) ? null : t; }
 
   // Runden-Editor: Verhalten, Datum, Thema (Freitext + Vorschläge), Details.
   function openRoundEditor(personId, roundId, isNew = false) {
@@ -359,7 +358,7 @@
       </div>
       <div class="field">
         <label>Datum</label>
-        <input id="reDate" type="datetime-local" value="${toLocalInput(round.date)}" />
+        <input id="reDate" type="date" value="${toDateInput(round.date)}" />
       </div>
       <div class="field">
         <label>Thema <span style="font-weight:400;color:var(--text-faint)">(frei eingeben oder wählen)</span></label>
@@ -385,7 +384,7 @@
       round.opp = move;
       round.topic = topicInput.value.trim();
       round.details = document.getElementById('reDetails').value.trim();
-      round.date = fromLocalInput(document.getElementById('reDate').value) || round.date;
+      round.date = fromDateInput(document.getElementById('reDate').value) || round.date;
       save(); closeModal(); renderDetail();
     });
   }
@@ -459,4 +458,9 @@
 
   /* ---------- Init ---------- */
   renderList();
+
+  // Offline-Fähigkeit / Installierbarkeit (nur wenn über http/https ausgeliefert).
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 })();

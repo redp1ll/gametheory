@@ -17,9 +17,22 @@ Helligkeitskontrast), und die Oberfläche kommt ohne dekorative Emojis aus.
 
 ## Nutzung
 
-Keine Installation, kein Build. Einfach `index.html` im Browser öffnen
-(Desktop oder Handy). Alle Daten bleiben lokal im Browser (`localStorage`).
-Export/Import als JSON über das Menü (⋯).
+Keine Installation, kein Build. Alle Daten bleiben lokal im Browser
+(`localStorage`); Export/Import als JSON über das Menü (⋯).
+
+**Sofort ausprobieren (lokal):** Repository herunterladen und `index.html`
+im Browser öffnen (Doppelklick). Läuft vollständig, auch offline.
+
+**Als Web-App aufs Handy (empfohlen):** Über einen statischen Hoster
+bereitstellen – am einfachsten **GitHub Pages**:
+
+1. Im Repo **Settings → Pages** öffnen.
+2. Unter *Build and deployment* als *Source* **Deploy from a branch** wählen,
+   Branch z. B. `main` (oder den Feature-Branch) und Ordner `/ (root)`.
+3. Nach ~1 Minute erscheint die URL `https://<user>.github.io/gametheory/`.
+4. Diese URL am Handy öffnen → Browser-Menü → **„Zum Startbildschirm
+   hinzufügen"**. Dank Manifest + Service-Worker startet sie dann wie eine
+   echte App im Vollbild und funktioniert offline.
 
 ## Strategien
 

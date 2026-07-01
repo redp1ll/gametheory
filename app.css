@@ -128,13 +128,13 @@ input, select { font-family: inherit; }
 .dot.c { background: var(--green); }
 .dot.d { background: var(--red); }
 .rec-pill {
-  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 8px 10px; border-radius: 12px; min-width: 74px;
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 9px 10px; border-radius: 12px; min-width: 96px; max-width: 108px; text-align: center;
 }
 .rec-pill.c { background: var(--green-soft); color: var(--green); }
 .rec-pill.d { background: var(--red-soft); color: var(--red); }
-.rec-pill .rp-move { font-weight: 700; font-size: 13px; }
-.rec-pill .rp-label { font-size: 10px; opacity: .8; }
+.rec-pill .rp-label { font-size: 9px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
+.rec-pill .rp-move { font-weight: 750; font-size: 13px; line-height: 1.15; }
 
 /* ---------- Empty ---------- */
 .empty { text-align: center; padding: 64px 24px; }
