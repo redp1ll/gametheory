@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1115" />
+  <title>Gambit — Beziehungsstrategie</title>
+  <link rel="stylesheet" href="app.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🤝</span>
+      <div class="brand-text">
+        <h1>Gambit</h1>
+        <p>Wo stehe ich mit wem?</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="menuBtn" class="icon-btn" aria-label="Menü" title="Menü">⋯</button>
+    </div>
+  </header>
+
+  <main id="listView" class="view">
+    <div class="list-head">
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Person suchen…" autocomplete="off" />
+      </div>
+    </div>
+    <ul id="peopleList" class="people"></ul>
+    <div id="emptyState" class="empty hidden">
+      <div class="empty-emoji">🧭</div>
+      <h2>Noch niemand angelegt</h2>
+      <p>Lege deine erste Person an und dokumentiere, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
+      <button class="btn primary" data-add>Erste Person anlegen</button>
+    </div>
+  </main>
+
+  <button id="fab" class="fab" aria-label="Person hinzufügen" title="Person hinzufügen">＋</button>
+
+  <!-- Detail-Ansicht -->
+  <section id="detailView" class="view detail hidden" aria-hidden="true"></section>
+
+  <!-- Modal-Container -->
+  <div id="modalRoot"></div>
+
+  <script src="strategies.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
