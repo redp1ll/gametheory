@@ -1,5 +1,5 @@
 /* Gambit — Service Worker: App-Shell cachen, damit die App offline läuft. */
-const CACHE = 'gambit-v2';
+const CACHE = 'gambit-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,8 @@ const ASSETS = [
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
+  './icon-dark-192.png',
+  './icon-dark-512.png',
 ];
 
 self.addEventListener('install', (e) => {

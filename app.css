@@ -74,8 +74,12 @@ input, select { font-family: inherit; }
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .logo-mark {
-  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-  object-fit: cover; display: block;
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: block;
+  background: center / cover no-repeat url("icon-192.png");
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+@media (prefers-color-scheme: dark) {
+  .logo-mark { background-image: url("icon-dark-192.png"); }
 }
 .brand-text h1 { font-size: 20px; }
 .brand-text p { font-size: 12.5px; color: var(--text-soft); }
