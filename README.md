@@ -1,2 +1,2 @@
 # gametheory
-Tit for Tat w/ 10% more forgiveness
+Tit for Tat w/ forgiveness
