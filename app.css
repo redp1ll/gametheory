@@ -11,10 +11,11 @@
   --border: #e7eaef;
   --primary: #4f46e5;
   --primary-soft: #ecebfd;
-  --green: #16a34a;
-  --green-soft: #e4f6ea;
-  --red: #e0384e;
-  --red-soft: #fce8ea;
+  /* Rot-Grün-schwäche-freundlich: Grün hell, Rot dunkel (großer Helligkeitskontrast) */
+  --green: #34d17a;
+  --green-soft: #e4f9ee;
+  --red: #9e1329;
+  --red-soft: #f8e3e7;
   --amber: #d98a00;
   --shadow: 0 1px 2px rgba(20, 22, 26, .04), 0 8px 24px rgba(20, 22, 26, .06);
   --shadow-lg: 0 12px 48px rgba(20, 22, 26, .18);
@@ -22,6 +23,7 @@
   --radius-sm: 12px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -34,10 +36,10 @@
     --border: #262b33;
     --primary: #7c7bf5;
     --primary-soft: #262647;
-    --green: #35c46b;
-    --green-soft: #17311f;
-    --red: #ff5a6e;
-    --red-soft: #391a1f;
+    --green: #4fe08c;
+    --green-soft: #133426;
+    --red: #c33249;
+    --red-soft: #341219;
     --amber: #e8a53a;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     --shadow-lg: 0 12px 48px rgba(0,0,0,.55);
@@ -71,7 +73,11 @@ input, select { font-family: inherit; }
   border-bottom: 1px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: 12px; }
-.logo { font-size: 26px; line-height: 1; }
+.logo-mark {
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 20px; font-weight: 800;
+  letter-spacing: -.03em; color: #fff; background: var(--primary);
+}
 .brand-text h1 { font-size: 20px; }
 .brand-text p { font-size: 12.5px; color: var(--text-soft); }
 .topbar-actions { display: flex; gap: 8px; }
@@ -94,8 +100,11 @@ input, select { font-family: inherit; }
 }
 #search:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .search-wrap::before {
-  content: "🔍"; position: absolute; left: 14px; top: 50%;
-  transform: translateY(-50%); font-size: 14px; opacity: .5;
+  content: ""; position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; opacity: .55; pointer-events: none;
+  background: currentColor; color: var(--text-faint);
+  -webkit-mask: var(--icon-search) center / contain no-repeat;
+  mask: var(--icon-search) center / contain no-repeat;
 }
 
 .people { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
@@ -279,13 +288,20 @@ input, select { font-family: inherit; }
   background: var(--surface); padding-right: 10px;
 }
 .mcells { display: flex; gap: 8px; }
-.mcell { flex: 0 0 30px; height: 30px; display: grid; place-items: center; }
+.mcell { position: relative; flex: 0 0 30px; height: 30px; display: grid; place-items: center; }
+.mcell.tappable { cursor: pointer; }
+.mcell.tappable:active .mdot { transform: scale(.88); }
 .mdot {
   width: 24px; height: 24px; border-radius: 50%;
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .16);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .16); transition: transform .1s;
 }
 .mdot.c { background: var(--green); }
 .mdot.d { background: var(--red); }
+/* Notiz-Indikator (farbunabhängig): kleiner Punkt unter dem Kreis */
+.mcell.noted::after {
+  content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 50%; background: var(--text-faint);
+}
 .mrow-num { margin-bottom: 2px; }
 .mrow-num .mcell { height: 14px; }
 .mnum { font-size: 10px; font-weight: 600; color: var(--text-faint); }
@@ -294,3 +310,28 @@ input, select { font-family: inherit; }
   font-size: 13.5px; color: var(--text-faint); padding: 18px 16px;
   background: var(--surface-2); border-radius: var(--radius-sm); margin-bottom: 24px; text-align: center;
 }
+
+/* ---------- Farb-Punkte (ersetzen Emojis, respektieren die Palette) ---------- */
+.gdot { display: inline-block; border-radius: 50%; vertical-align: middle; box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .18); }
+.gdot.c { background: var(--green); }
+.gdot.d { background: var(--red); }
+.gdot.sm { width: 11px; height: 11px; }
+.gdot.md { width: 16px; height: 16px; }
+.gdot.lg { width: 22px; height: 22px; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .16); }
+.rec-move .gdot.lg { width: 24px; height: 24px; }
+
+/* ---------- Segment-Umschalter (Verhalten im Runden-Editor) ---------- */
+.seg { display: flex; gap: 10px; }
+.seg-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 10px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 650;
+  border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text-soft);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.seg-btn.active.c { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.seg-btn.active.d { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+
+/* Verlaufseintrag anklickbar */
+.tl-item.tappable { cursor: pointer; border-radius: 10px; margin: 0 -6px; padding-left: 10px; padding-right: 10px; transition: background .12s; }
+.tl-item.tappable:hover { background: var(--surface-2); }
+.tl-details { font-size: 12.5px; color: var(--text-faint); margin-top: 2px; white-space: pre-wrap; }

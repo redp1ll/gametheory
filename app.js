@@ -53,17 +53,23 @@
       return '<div class="match-empty">Noch keine Runden gespielt – dokumentiere oben die erste Interaktion.</div>';
     }
     const my = window.Gambit.replayMyMoves(p.strategy, opp);
-    const cell = (m) => `<div class="mcell"><span class="mdot ${m === 'C' ? 'c' : 'd'}" title="${m === 'C' ? 'kooperiert' : 'nicht kooperiert'}"></span></div>`;
+    // Meine (abgeleiteten) Züge: nicht tippbar, da rechnerisch bestimmt.
+    const myCell = (m) => `<div class="mcell"><span class="mdot ${m === 'C' ? 'c' : 'd'}" title="${m === 'C' ? 'kooperiert' : 'nicht kooperiert'}"></span></div>`;
+    // Züge der Person: tippbar, um Datum/Thema/Details zu erfassen.
+    const oppCell = (m, r) => {
+      const noted = (r.topic || r.details) ? ' noted' : '';
+      return `<div class="mcell tappable${noted}" data-round="${r.id}" title="Tippen zum Bearbeiten"><span class="mdot ${m === 'C' ? 'c' : 'd'}"></span></div>`;
+    };
     const nums = opp.map((_, i) => `<div class="mcell mnum">${i + 1}</div>`).join('');
     return `
       <div class="match-scroll" id="matchScroll">
         <div class="match-grid">
           <div class="mrow mrow-num"><div class="mlabel"></div><div class="mcells">${nums}</div></div>
-          <div class="mrow"><div class="mlabel">Ich</div><div class="mcells">${my.map(cell).join('')}</div></div>
-          <div class="mrow"><div class="mlabel" style="color:${avatarColor(p.name)}">${esc(firstName(p.name))}</div><div class="mcells">${opp.map(cell).join('')}</div></div>
+          <div class="mrow"><div class="mlabel">Ich</div><div class="mcells">${my.map(myCell).join('')}</div></div>
+          <div class="mrow"><div class="mlabel" style="color:${avatarColor(p.name)}">${esc(firstName(p.name))}</div><div class="mcells">${opp.map((m, i) => oppCell(m, p.rounds[i])).join('')}</div></div>
         </div>
       </div>
-      <div class="match-legend">🟢 kooperiert · 🔴 nicht kooperiert · Runde 1 links, neueste rechts →<br><span style="opacity:.75">Reihe „Ich" zeigt die Züge, die deine Strategie dir geraten hat.</span></div>`;
+      <div class="match-legend"><span class="gdot sm c"></span> kooperiert · <span class="gdot sm d"></span> nicht kooperiert · Runde 1 links, neueste rechts →<br><span style="opacity:.8">Tippe einen Kreis in der Reihe „${esc(firstName(p.name))}", um Datum, Thema &amp; Details zu erfassen. Reihe „Ich" = von der Strategie geratene Züge.</span></div>`;
   }
 
   /* ---------- Rendering: Liste ---------- */
@@ -135,16 +141,17 @@
 
     const stratOptions = order.map((sid) => {
       const s = STRATEGIES[sid];
-      return `<option value="${sid}" ${sid === p.strategy ? 'selected' : ''}>${s.emoji} ${s.name}</option>`;
+      return `<option value="${sid}" ${sid === p.strategy ? 'selected' : ''}>${s.name}</option>`;
     }).join('');
 
     const timeline = p.rounds.length
       ? [...p.rounds].reverse().map((r) => `
-          <li class="tl-item">
-            <div class="tl-badge ${r.opp === 'C' ? 'c' : 'd'}">${r.opp === 'C' ? '🟢' : '🔴'}</div>
+          <li class="tl-item tappable" data-round="${r.id}">
+            <div class="tl-badge ${r.opp === 'C' ? 'c' : 'd'}"><span class="gdot md ${r.opp === 'C' ? 'c' : 'd'}"></span></div>
             <div class="tl-body">
               <div class="tl-title ${r.opp === 'C' ? 'c' : 'd'}">${r.opp === 'C' ? 'War nett · kooperiert' : 'War nicht nett · nicht kooperiert'}</div>
               ${r.topic ? `<div class="tl-topic">${esc(r.topic)}</div>` : ''}
+              ${r.details ? `<div class="tl-details">${esc(r.details)}</div>` : ''}
               <div class="tl-meta">${fmtDate(r.date)}</div>
             </div>
             <button class="tl-del" data-del="${r.id}" title="Löschen">✕</button>
@@ -166,9 +173,9 @@
         </div>
 
         <div class="rec-panel ${rec.move === 'C' ? 'c' : 'd'}">
-          <div class="rec-eyebrow">${rec.strategy.emoji} Empfehlung · ${esc(rec.strategy.name)}</div>
+          <div class="rec-eyebrow">Empfehlung · ${esc(rec.strategy.name)}</div>
           <div class="rec-move">
-            <span class="rm-icon">${rec.move === 'C' ? '🤝' : '✋'}</span>
+            <span class="gdot lg ${rec.move === 'C' ? 'c' : 'd'}"></span>
             <span class="rm-text">${rec.move === 'C' ? 'Kooperieren' : 'Nicht kooperieren'}</span>
           </div>
           <div class="rec-reason">${esc(rec.reason)}</div>
@@ -176,10 +183,10 @@
 
         <div class="section-title">Letzte Interaktion dokumentieren</div>
         <div class="log-row">
-          <button class="log-btn c" data-log="C"><span class="lb-emoji">🟢</span> War nett<br>(kooperiert)</button>
-          <button class="log-btn d" data-log="D"><span class="lb-emoji">🔴</span> War nicht nett<br>(nicht kooperiert)</button>
+          <button class="log-btn c" data-log="C"><span class="gdot lg c"></span> War nett<br>(kooperiert)</button>
+          <button class="log-btn d" data-log="D"><span class="gdot lg d"></span> War nicht nett<br>(nicht kooperiert)</button>
         </div>
-        <div class="log-hint">Optional kannst du danach ein Thema ergänzen.</div>
+        <div class="log-hint">Danach kannst du Datum, Thema &amp; Details ergänzen.</div>
 
         <div class="section-title">Spielverlauf</div>
         ${buildMatchGrid(p)}
@@ -187,7 +194,7 @@
         <div class="stats">
           <div class="stat"><div class="s-val">${opp.length}</div><div class="s-lbl">Interaktionen</div></div>
           <div class="stat"><div class="s-val">${rate === '—' ? '—' : rate + '%'}</div><div class="s-lbl">Koop.-Quote</div></div>
-          <div class="stat"><div class="s-val" style="color:${streak.move === 'C' ? 'var(--green)' : streak.move === 'D' ? 'var(--red)' : 'inherit'}">${streak.label}</div><div class="s-lbl">Aktuelle Serie</div></div>
+          <div class="stat"><div class="s-val">${streak.move ? `${streak.count}× <span class="gdot sm ${streak.move === 'C' ? 'c' : 'd'}"></span>` : '—'}</div><div class="s-lbl">Aktuelle Serie</div></div>
         </div>
 
         <div class="section-title">Strategie</div>
@@ -209,7 +216,10 @@
     detailView.querySelectorAll('[data-log]').forEach((b) =>
       b.addEventListener('click', () => logInteraction(p.id, b.dataset.log)));
     detailView.querySelectorAll('[data-del]').forEach((b) =>
-      b.addEventListener('click', () => deleteRound(p.id, b.dataset.del)));
+      b.addEventListener('click', (e) => { e.stopPropagation(); deleteRound(p.id, b.dataset.del); }));
+    // Antippbare Kreise & Verlaufseinträge öffnen den Runden-Editor.
+    detailView.querySelectorAll('.tappable[data-round]').forEach((c) =>
+      c.addEventListener('click', () => openRoundEditor(p.id, c.dataset.round)));
     detailView.querySelector('#stratSelect').addEventListener('change', (e) => {
       p.strategy = e.target.value; save(); renderDetail();
     });
@@ -223,22 +233,22 @@
   }
 
   function currentStreak(opp) {
-    if (!opp.length) return { label: '—', move: null };
+    if (!opp.length) return { count: 0, move: null };
     const last = opp.at(-1); let n = 0;
     for (let i = opp.length - 1; i >= 0 && opp[i] === last; i--) n++;
-    return { label: `${n}× ${last === 'C' ? '🟢' : '🔴'}`, move: last };
+    return { count: n, move: last };
   }
 
   /* ---------- Aktionen ---------- */
   function logInteraction(id, move) {
     const p = byId(id);
     if (!p) return;
-    const round = { id: uid(), opp: move, date: Date.now(), topic: '' };
+    const round = { id: uid(), opp: move, date: Date.now(), topic: '', details: '' };
     p.rounds.push(round);
     save();
     renderDetail();
-    // Optionales Thema nachreichen
-    openTopicModal(id, round.id);
+    // Direkt Datum/Thema/Details ergänzen (optional).
+    openRoundEditor(id, round.id, true);
   }
 
   function deleteRound(id, roundId) {
@@ -279,7 +289,7 @@
     const stratOptions = order.map((sid) => {
       const s = STRATEGIES[sid];
       const sel = (isEdit ? existing.strategy : DEFAULT_STRATEGY) === sid ? 'selected' : '';
-      return `<option value="${sid}" ${sel}>${s.emoji} ${s.name}</option>`;
+      return `<option value="${sid}" ${sel}>${s.name}</option>`;
     }).join('');
     openModal(`
       <h3>${isEdit ? 'Person bearbeiten' : 'Neue Person'}</h3>
@@ -318,33 +328,75 @@
     nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('savePerson').click(); });
   }
 
-  function openTopicModal(personId, roundId) {
+  // Alle bisher verwendeten Themen (über alle Personen) als Vorschläge sammeln.
+  function distinctTopics() {
+    const set = new Set();
+    for (const pp of people) for (const r of pp.rounds) if (r.topic && r.topic.trim()) set.add(r.topic.trim());
+    return [...set].sort((a, b) => a.localeCompare(b, 'de'));
+  }
+  // Timestamp <-> <input type="datetime-local">
+  function toLocalInput(ts) {
+    const d = new Date(ts); const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function fromLocalInput(v) { const t = Date.parse(v); return Number.isNaN(t) ? null : t; }
+
+  // Runden-Editor: Verhalten, Datum, Thema (Freitext + Vorschläge), Details.
+  function openRoundEditor(personId, roundId, isNew = false) {
     const p = byId(personId); const round = p?.rounds.find((r) => r.id === roundId);
     if (!round) return;
+    let move = round.opp;
+    const suggestions = distinctTopics().map((t) => `<option value="${esc(t)}"></option>`).join('');
     openModal(`
-      <h3>Thema hinzufügen?</h3>
-      <p class="modal-sub">Worum ging es bei dieser Interaktion? (optional)</p>
+      <h3>${isNew ? 'Interaktion ergänzen' : 'Interaktion bearbeiten'}</h3>
+      <p class="modal-sub">Alles optional – jederzeit über den Kreis änderbar.</p>
       <div class="field">
-        <input id="topicInput" type="text" placeholder="z. B. Projekt-Deadline, Rückzahlung…" />
+        <label>Verhalten</label>
+        <div class="seg" id="reSeg">
+          <button type="button" class="seg-btn c ${move === 'C' ? 'active' : ''}" data-move="C"><span class="gdot sm c"></span> War nett</button>
+          <button type="button" class="seg-btn d ${move === 'D' ? 'active' : ''}" data-move="D"><span class="gdot sm d"></span> Nicht nett</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Datum</label>
+        <input id="reDate" type="datetime-local" value="${toLocalInput(round.date)}" />
+      </div>
+      <div class="field">
+        <label>Thema <span style="font-weight:400;color:var(--text-faint)">(frei eingeben oder wählen)</span></label>
+        <input id="reTopic" list="topicSuggestions" placeholder="z. B. Projekt-Deadline, Rückzahlung…" value="${esc(round.topic || '')}" autocomplete="off" />
+        <datalist id="topicSuggestions">${suggestions}</datalist>
+      </div>
+      <div class="field">
+        <label>Details <span style="font-weight:400;color:var(--text-faint)">(optional)</span></label>
+        <textarea id="reDetails" placeholder="Notizen zu dieser Interaktion…">${esc(round.details || '')}</textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn ghost" data-close>Überspringen</button>
-        <button class="btn primary" id="saveTopic">Speichern</button>
+        <button class="btn ghost" data-close>${isNew ? 'Überspringen' : 'Abbrechen'}</button>
+        <button class="btn primary" id="reSave">Speichern</button>
       </div>`);
-    const input = document.getElementById('topicInput');
-    setTimeout(() => input.focus(), 50);
-    const commit = () => { round.topic = input.value.trim(); save(); closeModal(); renderDetail(); };
-    document.getElementById('saveTopic').addEventListener('click', commit);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+    document.querySelectorAll('#reSeg .seg-btn').forEach((b) =>
+      b.addEventListener('click', () => {
+        move = b.dataset.move;
+        document.querySelectorAll('#reSeg .seg-btn').forEach((x) => x.classList.toggle('active', x === b));
+      }));
+    const topicInput = document.getElementById('reTopic');
+    setTimeout(() => topicInput.focus(), 50);
+    document.getElementById('reSave').addEventListener('click', () => {
+      round.opp = move;
+      round.topic = topicInput.value.trim();
+      round.details = document.getElementById('reDetails').value.trim();
+      round.date = fromLocalInput(document.getElementById('reDate').value) || round.date;
+      save(); closeModal(); renderDetail();
+    });
   }
 
   function openMenuModal() {
     openModal(`
       <h3>Menü</h3>
       <ul class="menu-list">
-        <li id="mExport"><span class="m-emoji">⬇️</span> Daten exportieren (JSON)</li>
-        <li id="mImport"><span class="m-emoji">⬆️</span> Daten importieren (JSON)</li>
-        <li id="mAbout"><span class="m-emoji">ℹ️</span> Über die Strategien</li>
+        <li id="mExport">Daten exportieren (JSON)</li>
+        <li id="mImport">Daten importieren (JSON)</li>
+        <li id="mAbout">Über die Strategien</li>
       </ul>
       <div class="modal-actions"><button class="btn ghost" data-close style="flex:1">Schließen</button></div>`);
     document.getElementById('mExport').addEventListener('click', exportData);
@@ -355,7 +407,7 @@
   function openAbout() {
     const rows = order.map((sid) => {
       const s = STRATEGIES[sid];
-      return `<div style="margin-bottom:14px"><strong>${s.emoji} ${esc(s.name)}</strong><br><span style="font-size:13px;color:var(--text-soft)">${esc(s.blurb)}</span></div>`;
+      return `<div style="margin-bottom:14px"><strong>${esc(s.name)}</strong><br><span style="font-size:13px;color:var(--text-soft)">${esc(s.blurb)}</span></div>`;
     }).join('');
     openModal(`
       <h3>Über die Strategien</h3>
@@ -386,7 +438,7 @@
             id: p.id || uid(), name: p.name || 'Unbenannt', context: p.context || '',
             strategy: STRATEGIES[p.strategy] ? p.strategy : DEFAULT_STRATEGY,
             created: p.created || Date.now(),
-            rounds: (p.rounds || []).map((r) => ({ id: r.id || uid(), opp: r.opp === 'D' ? 'D' : 'C', date: r.date || Date.now(), topic: r.topic || '' })),
+            rounds: (p.rounds || []).map((r) => ({ id: r.id || uid(), opp: r.opp === 'D' ? 'D' : 'C', date: r.date || Date.now(), topic: r.topic || '', details: r.details || '' })),
           }));
           save(); closeModal(); renderList();
         } catch { alert('Datei konnte nicht gelesen werden.'); }

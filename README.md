@@ -4,8 +4,16 @@ Eine minimalistische App, um auf Basis der **Spieltheorie** (Tit for Tat & Verwa
 Überblick zu behalten, *mit welcher Person du wo stehst* — und was dein nächster kluger Zug ist.
 
 Lege eine Person an (z. B. „Tom Müller"), hake nach jeder Interaktion an, ob sie **nett war
-und kooperiert hat (🟢)** oder **nicht (🔴)**. Gambit schlägt dir – begründet durch die
+und kooperiert hat (grün)** oder **nicht (rot)**. Gambit schlägt dir – begründet durch die
 gewählte Strategie – vor, ob du beim nächsten Mal **kooperieren** oder **dich zurückziehen** solltest.
+
+Der **Spielverlauf** wird zweizeilig dargestellt (obere Reihe = deine Züge, untere = die der
+Person), spaltenweise pro Runde ausgerichtet und horizontal scrollbar. **Tippe einen Kreis**,
+um **Datum** (Standard: jetzt, editierbar), **Thema** (Freitext *oder* Auswahl aus bereits
+verwendeten Themen) und **Details** (Freitext) zu erfassen.
+
+Die Farben sind auf **Rot-Grün-Sehschwäche** ausgelegt (helles Grün, dunkles Rot – großer
+Helligkeitskontrast), und die Oberfläche kommt ohne dekorative Emojis aus.
 
 ## Nutzung
 

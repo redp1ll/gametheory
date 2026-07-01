@@ -19,7 +19,6 @@
     generous_tft: {
       id: 'generous_tft',
       name: 'Großzügiges Tit for Tat',
-      emoji: '🕊️',
       tagline: 'Empfohlen · verzeiht einen einzelnen Ausrutscher',
       blurb:
         'Startet freundlich, spiegelt das Verhalten des anderen – verzeiht aber einen einmaligen Ausrutscher. Erst bei ZWEI Fehltritten hintereinander wird nicht mehr kooperiert. Robust gegen Missverständnisse.',
@@ -43,7 +42,6 @@
     tft: {
       id: 'tft',
       name: 'Tit for Tat',
-      emoji: '🪞',
       tagline: 'Streng · spiegelt jeden letzten Zug',
       blurb:
         'Der Klassiker (Axelrod). Fängt freundlich an und macht danach exakt das, was der andere zuletzt getan hat. Fair und klar – aber unversöhnlich bei einem einzelnen Fehler.',
@@ -64,7 +62,6 @@
     contrite_tft: {
       id: 'contrite_tft',
       name: 'Contrite Tit for Tat',
-      emoji: '🧠',
       tagline: 'Klug · erkennt „wer hat angefangen"',
       blurb:
         'Wie Tit for Tat, aber es unterscheidet: Hat der andere dich zu RECHT bestraft (weil du selbst zuletzt nicht kooperiert hast), verzeihst du. Hat er dich GRUNDLOS angegriffen, reagierst du. Verhindert Rache-Schleifen.',
@@ -92,7 +89,6 @@
     pavlov: {
       id: 'pavlov',
       name: 'Pavlov (Win-Stay, Lose-Shift)',
-      emoji: '🎯',
       tagline: 'Durchsetzungsstark · „was funktioniert, behalte ich bei"',
       blurb:
         'Behält den letzten eigenen Zug bei, wenn er sich gelohnt hat, und wechselt, wenn nicht. Sehr erfolgreich und lernt, Nachgiebige auszunutzen – aber weniger „fair" als Tit for Tat.',
@@ -117,7 +113,6 @@
     grim: {
       id: 'grim',
       name: 'Grim Trigger',
-      emoji: '⛔',
       tagline: 'Kompromisslos · ein Verrat = für immer Schluss',
       blurb:
         'Kooperiert, solange der andere kooperiert. Ein einziger Vertrauensbruch – und danach nie wieder Kooperation. Maximale Abschreckung, null Vergebung. Für Situationen, in denen Vertrauen absolut ist.',
