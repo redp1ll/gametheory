@@ -42,7 +42,29 @@
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
   }
   function esc(s) { return (s || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  function firstName(name) { return name.trim().split(/\s+/)[0] || name; }
   const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+
+  // Zweizeiliges Spielverlauf-Raster (à la "Evolution of Trust"):
+  // obere Reihe = meine (per Strategie rekonstruierten) Züge, untere = die der Person.
+  function buildMatchGrid(p) {
+    const opp = p.rounds.map((r) => r.opp);
+    if (!opp.length) {
+      return '<div class="match-empty">Noch keine Runden gespielt – dokumentiere oben die erste Interaktion.</div>';
+    }
+    const my = window.Gambit.replayMyMoves(p.strategy, opp);
+    const cell = (m) => `<div class="mcell"><span class="mdot ${m === 'C' ? 'c' : 'd'}" title="${m === 'C' ? 'kooperiert' : 'nicht kooperiert'}"></span></div>`;
+    const nums = opp.map((_, i) => `<div class="mcell mnum">${i + 1}</div>`).join('');
+    return `
+      <div class="match-scroll" id="matchScroll">
+        <div class="match-grid">
+          <div class="mrow mrow-num"><div class="mlabel"></div><div class="mcells">${nums}</div></div>
+          <div class="mrow"><div class="mlabel">Ich</div><div class="mcells">${my.map(cell).join('')}</div></div>
+          <div class="mrow"><div class="mlabel" style="color:${avatarColor(p.name)}">${esc(firstName(p.name))}</div><div class="mcells">${opp.map(cell).join('')}</div></div>
+        </div>
+      </div>
+      <div class="match-legend">🟢 kooperiert · 🔴 nicht kooperiert · Runde 1 links, neueste rechts →<br><span style="opacity:.75">Reihe „Ich" zeigt die Züge, die deine Strategie dir geraten hat.</span></div>`;
+  }
 
   /* ---------- Rendering: Liste ---------- */
   const listView = document.getElementById('listView');
@@ -159,6 +181,9 @@
         </div>
         <div class="log-hint">Optional kannst du danach ein Thema ergänzen.</div>
 
+        <div class="section-title">Spielverlauf</div>
+        ${buildMatchGrid(p)}
+
         <div class="stats">
           <div class="stat"><div class="s-val">${opp.length}</div><div class="s-lbl">Interaktionen</div></div>
           <div class="stat"><div class="s-val">${rate === '—' ? '—' : rate + '%'}</div><div class="s-lbl">Koop.-Quote</div></div>
@@ -171,7 +196,7 @@
         </div>
         <div class="strat-blurb">${esc(STRATEGIES[p.strategy].blurb)}</div>
 
-        <div class="section-title">Verlauf</div>
+        <div class="section-title">Einzelheiten & Themen</div>
         <ul class="timeline">${timeline}</ul>
 
         <div class="danger-zone">
@@ -189,6 +214,12 @@
       p.strategy = e.target.value; save(); renderDetail();
     });
     detailView.querySelector('#deletePersonBtn').addEventListener('click', () => confirmDeletePerson(p.id));
+
+    // Spielverlauf zur neuesten Runde (rechts) scrollen (nach Layout/Sichtbarkeit).
+    requestAnimationFrame(() => {
+      const scroll = detailView.querySelector('#matchScroll');
+      if (scroll) scroll.scrollLeft = scroll.scrollWidth;
+    });
   }
 
   function currentStreak(opp) {

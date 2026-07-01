@@ -263,3 +263,34 @@ input, select { font-family: inherit; }
 .menu-list li:last-child { border-bottom: none; }
 .menu-list li:hover { background: var(--surface-2); }
 .menu-list .m-emoji { font-size: 18px; }
+
+/* ---------- Spielverlauf-Raster (zweizeilig, scrollbar) ---------- */
+.match-scroll {
+  overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 8px; margin-bottom: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.match-grid { display: inline-flex; flex-direction: column; gap: 6px; min-width: 100%; padding: 8px 10px; }
+.mrow { display: flex; align-items: center; }
+.mlabel {
+  position: sticky; left: 0; z-index: 2; flex-shrink: 0; width: 40px;
+  font-size: 12px; font-weight: 700; color: var(--text-soft);
+  background: var(--surface); padding-right: 10px;
+}
+.mcells { display: flex; gap: 8px; }
+.mcell { flex: 0 0 30px; height: 30px; display: grid; place-items: center; }
+.mdot {
+  width: 24px; height: 24px; border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .16);
+}
+.mdot.c { background: var(--green); }
+.mdot.d { background: var(--red); }
+.mrow-num { margin-bottom: 2px; }
+.mrow-num .mcell { height: 14px; }
+.mnum { font-size: 10px; font-weight: 600; color: var(--text-faint); }
+.match-legend { font-size: 11.5px; line-height: 1.5; color: var(--text-faint); margin-bottom: 24px; }
+.match-empty {
+  font-size: 13.5px; color: var(--text-faint); padding: 18px 16px;
+  background: var(--surface-2); border-radius: var(--radius-sm); margin-bottom: 24px; text-align: center;
+}
