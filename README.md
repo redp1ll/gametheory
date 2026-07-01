@@ -1,4 +1,4 @@
-# Gambit — Beziehungsstrategie 🤝
+# Gambit — Beziehungsstrategie
 
 Eine minimalistische App, um auf Basis der **Spieltheorie** (Tit for Tat & Verwandte) den
 Überblick zu behalten, *mit welcher Person du wo stehst* — und was dein nächster kluger Zug ist.
