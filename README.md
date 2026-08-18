@@ -53,11 +53,11 @@ bereitstellen – am einfachsten **GitHub Pages**:
 
 | Strategie | Kurz |
 |---|---|
-| 🕊️ **Großzügiges Tit for Tat** *(Standard)* | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
-| 🧠 **Contrite Tit for Tat** | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
-| 🪞 **Tit for Tat** | Der Klassiker: spiegelt exakt den letzten Zug. Fair, aber streng. |
-| 🎯 **Pavlov** (Win-Stay, Lose-Shift) | Behält bei, was funktioniert; wechselt, was nicht. Durchsetzungsstark. |
-| ⛔ **Grim Trigger** | Ein Vertrauensbruch = für immer keine Kooperation mehr. |
+| **Großzügiges Tit for Tat** *(Standard)* | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
+| **Contrite Tit for Tat** | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
+| **Tit for Tat** | Der Klassiker: spiegelt exakt den letzten Zug. Fair, aber streng. |
+| **Pavlov** (Win-Stay, Lose-Shift) | Behält bei, was funktioniert; wechselt, was nicht. Durchsetzungsstark. |
+| **Grim Trigger** | Ein Vertrauensbruch = für immer keine Kooperation mehr. |
 
 **Warum „großzügig" als Standard?** In echten Beziehungen gibt es „Rauschen"
 (schlechte Tage, Missverständnisse). Ein rein spiegelndes Tit for Tat gerät nach
@@ -80,9 +80,9 @@ verhindert das, ohne dich ausbeutbar zu machen.
 **[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/)**
 (siehe [`LICENSE`](LICENSE)).
 
-- ✅ **Erlaubt:** Ansehen, Ausprobieren und Nutzung für **nicht-kommerzielle**
+- **Erlaubt:** Ansehen, Ausprobieren und Nutzung für **nicht-kommerzielle**
   Zwecke (privat, Bildung, Forschung, gemeinnützige Organisationen).
-- ⛔ **Nicht erlaubt:** jede **kommerzielle Nutzung** – dazu zählt u. a., die App
+- **Nicht erlaubt:** jede **kommerzielle Nutzung** – dazu zählt u. a., die App
   oder Teile davon zu verkaufen, in ein kommerzielles Produkt einzubauen oder
   damit Einnahmen zu erzielen.
 
