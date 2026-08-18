@@ -75,12 +75,22 @@
   function redirectTo() {
     return location.origin + location.pathname;
   }
-  async function signIn(provider) {
-    const { error } = await client.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: redirectTo() },
+  // Anmeldung per E-Mail: Es geht eine Nachricht mit Link UND Code raus.
+  // Der Link ist bequem am Rechner; der Code funktioniert auch dann, wenn
+  // die App auf dem Startbildschirm liegt und der Link in einem anderen
+  // Browser aufgehen wuerde.
+  async function requestEmailCode(email) {
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo(), shouldCreateUser: true },
     });
     if (error) throw error;
+  }
+  async function verifyEmailCode(email, token) {
+    const { data, error } = await client.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) throw error;
+    state.user = data.user;
+    return data.user;
   }
   async function signOut() {
     await client.auth.signOut();
@@ -213,7 +223,7 @@
 
   global.GambitStore = {
     client, state,
-    currentUser, onAuthChange, signIn, signOut,
+    currentUser, onAuthChange, requestEmailCode, verifyEmailCode, signOut,
     loadAll,
     addPerson, updatePerson, deletePerson,
     addRound, updateRound, deleteRound,

@@ -21,7 +21,10 @@ Die Einträge liegen in einer Postgres-Datenbank bei Supabase (Region Frankfurt)
 Der Zugriff ist über *Row Level Security* abgesichert: Jede Zeile gehört einem
 Konto, und die Datenbank gibt ausschliesslich die eigenen Zeilen heraus – auch
 dann, wenn jemand den öffentlichen Schlüssel aus dem Quelltext benutzt.
-Angemeldet wird sich über Google.
+Angemeldet wird sich per E-Mail: Die App verschickt eine Nachricht mit
+Anmeldelink und sechsstelligem Code. Der Code ist der verlässlichere Weg,
+wenn die App auf dem Startbildschirm liegt – ein angetippter Link würde dort
+im Browser statt in der App aufgehen.
 
 Beim ersten Anmelden bietet die App an, zuvor lokal gespeicherte Einträge in
 das Konto zu übernehmen. Sicherung und Wiederherstellung als JSON gibt es

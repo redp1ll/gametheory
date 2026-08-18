@@ -746,22 +746,88 @@
       node.setAttribute('aria-hidden', String(!on));
     }
   }
-  function showAuth() { show('auth'); }
+  function showAuth() {
+    show('auth');
+    codeForm?.classList.add('hidden');
+    emailForm?.classList.remove('hidden');
+    if (codeInput) codeInput.value = '';
+  }
 
-  document.querySelectorAll('[data-provider]').forEach((b) =>
-    b.addEventListener('click', async () => {
-      b.disabled = true;
-      try {
-        await Store.signIn(b.dataset.provider);
-      } catch (err) {
-        console.error(err);
-        b.disabled = false;
-        const hint = /provider is not enabled/i.test(err?.message || '')
-          ? 'Dieser Anmeldeweg ist noch nicht freigeschaltet.'
-          : 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.';
-        toast(hint, 'error');
-      }
-    }));
+  const emailForm = document.getElementById('emailForm');
+  const codeForm = document.getElementById('codeForm');
+  const emailInput = document.getElementById('authEmail');
+  const codeInput = document.getElementById('authCode');
+  const EMAIL_MEMO = 'gambit.email';
+  let pendingEmail = '';
+
+  emailInput.value = localStorage.getItem(EMAIL_MEMO) || '';
+
+  function authError(err) {
+    const msg = String(err?.message || '');
+    if (/rate limit|too many|after \d+ seconds/i.test(msg)) {
+      return 'Zu viele Versuche. Bitte warte ein paar Minuten.';
+    }
+    if (/invalid|expired|token/i.test(msg)) {
+      return 'Der Code stimmt nicht oder ist abgelaufen. Fordere einen neuen an.';
+    }
+    if (!navigator.onLine) return 'Keine Verbindung.';
+    return 'Das hat nicht geklappt. Bitte erneut versuchen.';
+  }
+
+  emailForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+    const btn = document.getElementById('sendLink');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      emailInput.classList.add('invalid'); emailInput.focus();
+      toast('Bitte gib eine gültige E-Mail-Adresse ein.', 'error');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Wird gesendet…';
+    try {
+      await Store.requestEmailCode(email);
+      pendingEmail = email;
+      localStorage.setItem(EMAIL_MEMO, email);
+      document.getElementById('sentTo').textContent = email;
+      emailForm.classList.add('hidden');
+      codeForm.classList.remove('hidden');
+      setTimeout(() => codeInput.focus(), 80);
+    } catch (err) {
+      console.error(err);
+      toast(authError(err), 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Anmeldelink senden';
+    }
+  });
+  emailInput.addEventListener('input', () => emailInput.classList.remove('invalid'));
+
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = codeInput.value.replace(/\D/g, '');
+    const btn = document.getElementById('verifyCode');
+    if (code.length !== 6) {
+      codeInput.classList.add('invalid'); codeInput.focus();
+      toast('Der Code besteht aus sechs Ziffern.', 'error');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Wird geprüft…';
+    try {
+      await Store.verifyEmailCode(pendingEmail, code);
+      await enterApp();
+    } catch (err) {
+      console.error(err);
+      toast(authError(err), 'error');
+      btn.disabled = false; btn.textContent = 'Anmelden';
+    }
+  });
+  codeInput.addEventListener('input', () => codeInput.classList.remove('invalid'));
+
+  document.getElementById('backToEmail').addEventListener('click', () => {
+    codeForm.classList.add('hidden');
+    emailForm.classList.remove('hidden');
+    codeInput.value = '';
+    emailInput.focus();
+  });
 
   async function enterApp() {
     show('app');
