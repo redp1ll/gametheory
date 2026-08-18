@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const { STRATEGIES, DEFAULT_STRATEGY, order, recommend } = window.Gambit;
-  const STORE_KEY = 'gambit.people.v1';
+  const Store = window.GambitStore;
   const THEME_KEY = 'gambit.theme';
 
   /* ---------- Icons (SF-Symbols-Anmutung) ---------- */
@@ -41,16 +41,32 @@
   applyTheme(getTheme());
 
   /* ---------- State ---------- */
-  let people = load();
+  let people = [];
   let currentId = null;
-
-  function load() {
-    try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : []; }
-    catch { return []; }
-  }
-  function save() { localStorage.setItem(STORE_KEY, JSON.stringify(people)); }
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function byId(id) { return people.find((p) => p.id === id); }
+
+  // Kurze Rueckmeldung am unteren Rand.
+  const toastRoot = document.getElementById('toastRoot');
+  let toastTimer = null;
+  function toast(message, kind) {
+    toastRoot.innerHTML = `<div class="toast${kind === 'error' ? ' error' : ''}">${esc(message)}</div>`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastRoot.innerHTML = ''; }, 3200);
+  }
+  // Schreibzugriffe kapseln: bei Fehlern den Serverstand wiederherstellen.
+  async function persist(action, failureMessage) {
+    try {
+      await action();
+      return true;
+    } catch (err) {
+      console.error(err);
+      toast(failureMessage + ' ' + (navigator.onLine ? 'Bitte erneut versuchen.' : 'Keine Verbindung.'), 'error');
+      try { people = await Store.loadAll(); } catch { /* Serverstand nicht erreichbar */ }
+      renderList();
+      if (currentId && !detailView.classList.contains('hidden')) renderDetail();
+      return false;
+    }
+  }
 
   /* ---------- Helfer ---------- */
   const AVATAR_COLORS = ['#0a84ff','#5e5ce6','#bf5af2','#ff375f','#ff9f0a','#30b0c7','#32ade6','#ac8e68','#66d4cf','#ff6482'];
@@ -302,17 +318,20 @@
   }
 
   /* ---------- Aktionen ---------- */
-  function logInteraction(id, move) {
+  async function logInteraction(id, move) {
     const p = byId(id); if (!p) return;
-    const round = { id: uid(), opp: move, date: Date.now(), topic: '', details: '' };
-    p.rounds.push(round);
-    save(); renderDetail();
-    openRoundSheet(id, round.id, true);
+    let created = null;
+    const ok = await persist(async () => {
+      created = await Store.addRound(id, { opp: move, date: Date.now() });
+    }, 'Interaktion konnte nicht gespeichert werden.');
+    if (!ok || !created) return;
+    renderDetail(); renderList();
+    openRoundSheet(id, created.id, true);
   }
-  function deleteRound(id, roundId) {
-    const p = byId(id); if (!p) return;
-    p.rounds = p.rounds.filter((r) => r.id !== roundId);
-    save(); renderDetail();
+  async function deleteRound(id, roundId) {
+    const ok = await persist(() => Store.deleteRound(id, roundId),
+      'Interaktion konnte nicht gelöscht werden.');
+    if (ok) { renderDetail(); renderList(); }
   }
 
   /* ---------- Sheets ---------- */
@@ -386,17 +405,25 @@
         () => openPersonSheet(existing, current)
       );
     });
-    document.getElementById('savePerson').addEventListener('click', () => {
+    document.getElementById('savePerson').addEventListener('click', async () => {
       const name = nameInput.value.trim();
       if (!name) { nameInput.classList.add('invalid'); nameInput.focus(); return; }
       const context = document.getElementById('pContext').value.trim();
       const strategy = state.strategy;
+      const saveBtn = document.getElementById('savePerson');
+      saveBtn.disabled = true; saveBtn.textContent = 'Wird gesichert…';
       if (isEdit) {
-        existing.name = name; existing.context = context; existing.strategy = strategy;
-        save(); closeSheet(); renderDetail(); renderList();
+        const ok = await persist(() => Store.updatePerson(existing.id, { name, context, strategy }),
+          'Änderungen konnten nicht gespeichert werden.');
+        if (!ok) { saveBtn.disabled = false; saveBtn.textContent = 'Sichern'; return; }
+        closeSheet(); renderDetail(); renderList();
       } else {
-        const p = { id: uid(), name, context, strategy, created: Date.now(), rounds: [] };
-        people.push(p); save(); closeSheet(); renderList(); openDetail(p.id);
+        let created = null;
+        const ok = await persist(async () => {
+          created = await Store.addPerson({ name, context, strategy });
+        }, 'Person konnte nicht angelegt werden.');
+        if (!ok || !created) { saveBtn.disabled = false; saveBtn.textContent = 'Anlegen'; return; }
+        closeSheet(); renderList(); openDetail(created.id);
       }
     });
     nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('savePerson').click(); });
@@ -424,8 +451,12 @@
       b.addEventListener('click', () => onPick(b.dataset.sid)));
   }
   function openStrategyPicker(p) {
-    pickStrategy(p.strategy, (sid) => {
-      p.strategy = sid; save(); closeSheet(); renderDetail(); renderList();
+    pickStrategy(p.strategy, async (sid) => {
+      closeSheet();
+      const ok = await persist(() => Store.updatePerson(p.id, {
+        name: p.name, context: p.context, strategy: sid,
+      }), 'Strategie konnte nicht gespeichert werden.');
+      if (ok) { renderDetail(); renderList(); }
     });
   }
 
@@ -479,12 +510,19 @@
         move = b.dataset.move;
         document.querySelectorAll('#reSeg button').forEach((x) => x.classList.toggle('on', x === b));
       }));
-    document.getElementById('reSave').addEventListener('click', () => {
-      round.opp = move;
-      round.topic = document.getElementById('reTopic').value.trim();
-      round.details = document.getElementById('reDetails').value.trim();
-      round.date = fromDateInput(document.getElementById('reDate').value) || round.date;
-      save(); closeSheet(); renderDetail(); renderList();
+    document.getElementById('reSave').addEventListener('click', async () => {
+      const patch = {
+        opp: move,
+        topic: document.getElementById('reTopic').value.trim(),
+        details: document.getElementById('reDetails').value.trim(),
+        date: fromDateInput(document.getElementById('reDate').value) || round.date,
+      };
+      const btn = document.getElementById('reSave');
+      btn.disabled = true; btn.textContent = 'Wird gesichert…';
+      const ok = await persist(() => Store.updateRound(personId, roundId, patch),
+        'Interaktion konnte nicht gespeichert werden.');
+      if (!ok) { btn.disabled = false; btn.textContent = 'Sichern'; return; }
+      closeSheet(); renderDetail(); renderList();
     });
     const del = document.getElementById('reDel');
     if (del) del.addEventListener('click', () => { closeSheet(); deleteRound(personId, roundId); renderList(); });
@@ -513,9 +551,12 @@
         <button class="btn ghost" data-close>Abbrechen</button>
         <button class="btn danger" id="confirmDel">Löschen</button>
       </div>`);
-    document.getElementById('confirmDel').addEventListener('click', () => {
-      people = people.filter((x) => x.id !== id);
-      save(); closeSheet(); history.back(); renderList();
+    document.getElementById('confirmDel').addEventListener('click', async () => {
+      const btn = document.getElementById('confirmDel');
+      btn.disabled = true; btn.textContent = 'Wird gelöscht…';
+      const ok = await persist(() => Store.deletePerson(id), 'Person konnte nicht gelöscht werden.');
+      if (!ok) { btn.disabled = false; btn.textContent = 'Löschen'; return; }
+      closeSheet(); history.back(); renderList();
     });
   }
 
@@ -544,6 +585,11 @@
           <span class="row-sub">Sicherung erstellen oder einspielen</span></span>
           <span class="chev">${ICON.chevron()}</span>
         </button>
+        <button class="row" id="mAccount">
+          <span class="row-main"><span class="row-title">Konto</span>
+          <span class="row-sub">${esc(Store.state.user?.email || 'Angemeldet')}</span></span>
+          <span class="chev">${ICON.chevron()}</span>
+        </button>
       </div>
       <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`);
     document.querySelectorAll('[data-theme-opt]').forEach((b) =>
@@ -553,6 +599,25 @@
       }));
     document.getElementById('mAbout').addEventListener('click', openAbout);
     document.getElementById('mData').addEventListener('click', openDataSheet);
+    document.getElementById('mAccount').addEventListener('click', openAccountSheet);
+  }
+
+  function openAccountSheet() {
+    const u = Store.state.user;
+    openSheet(`
+      <h3>Konto</h3>
+      <p class="sub">Angemeldet als ${esc(u?.email || 'unbekannt')}.</p>
+      <div class="rows">
+        <div class="row" style="cursor:default">
+          <span class="row-main"><span class="row-title">Speicherort</span>
+          <span class="row-sub">Verschlüsselte Datenbank in Frankfurt. Nur du kannst deine Einträge lesen.</span></span>
+        </div>
+        <button class="row destructive" id="aSignOut">
+          <span class="row-main"><span class="row-title">Abmelden</span></span>
+        </button>
+      </div>
+      <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`);
+    document.getElementById('aSignOut').addEventListener('click', confirmSignOut);
   }
 
   function openAbout() {
@@ -573,7 +638,7 @@
     const rounds = people.reduce((n, p) => n + p.rounds.length, 0);
     openSheet(`
       <h3>Daten</h3>
-      <p class="sub">Alles liegt nur auf diesem Gerät: ${people.length} ${people.length === 1 ? 'Person' : 'Personen'}, ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}.</p>
+      <p class="sub">In deinem Konto gespeichert: ${people.length} ${people.length === 1 ? 'Person' : 'Personen'}, ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}.</p>
       <div class="rows">
         <button class="row" id="dExport"><span class="row-main"><span class="row-title">Sicherung exportieren</span>
           <span class="row-sub">Als JSON-Datei speichern</span></span><span class="chev">${ICON.chevron()}</span></button>
@@ -598,26 +663,58 @@
     inp.addEventListener('change', () => {
       const file = inp.files[0]; if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
+        let list;
         try {
           const data = JSON.parse(reader.result);
-          const imported = Array.isArray(data) ? data : data.people;
-          if (!Array.isArray(imported)) throw new Error('Ungültig');
-          people = imported.map((p) => ({
-            id: p.id || uid(), name: p.name || 'Unbenannt', context: p.context || '',
-            strategy: STRATEGIES[p.strategy] ? p.strategy : DEFAULT_STRATEGY,
-            created: p.created || Date.now(),
-            rounds: (p.rounds || []).map((r) => ({
-              id: r.id || uid(), opp: r.opp === 'D' ? 'D' : 'C',
-              date: r.date || Date.now(), topic: r.topic || '', details: r.details || '',
-            })),
-          }));
-          save(); closeSheet(); renderList();
-        } catch { alert('Die Datei konnte nicht gelesen werden.'); }
+          list = Array.isArray(data) ? data : data.people;
+          if (!Array.isArray(list)) throw new Error('Ungültig');
+        } catch {
+          toast('Die Datei konnte nicht gelesen werden.', 'error');
+          return;
+        }
+        confirmImport(list);
       };
       reader.readAsText(file);
     });
     inp.click();
+  }
+
+  function confirmImport(list) {
+    const rounds = list.reduce((n, p) => n + ((p.rounds || []).length), 0);
+    openSheet(`
+      <h3>Sicherung einspielen?</h3>
+      <p class="sub">Die Datei enthält ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} und ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}. Dein aktueller Bestand (${people.length} ${people.length === 1 ? 'Person' : 'Personen'}) wird dabei <strong>ersetzt</strong>.</p>
+      <div class="actions">
+        <button class="btn ghost" data-close>Abbrechen</button>
+        <button class="btn danger" id="doImport">Ersetzen</button>
+      </div>`);
+    document.getElementById('doImport').addEventListener('click', async () => {
+      const btn = document.getElementById('doImport');
+      btn.disabled = true; btn.textContent = 'Wird eingespielt…';
+      const ok = await persist(() => Store.importBackup(list), 'Die Sicherung konnte nicht eingespielt werden.');
+      if (!ok) { btn.disabled = false; btn.textContent = 'Ersetzen'; return; }
+      people = Store.people;
+      closeSheet(); renderList();
+      toast('Sicherung eingespielt.');
+    });
+  }
+
+  /* ---------- Konto ---------- */
+  function confirmSignOut() {
+    openSheet(`
+      <h3>Abmelden?</h3>
+      <p class="sub">Deine Daten bleiben gespeichert und sind nach der nächsten Anmeldung wieder da.</p>
+      <div class="actions">
+        <button class="btn ghost" data-close>Abbrechen</button>
+        <button class="btn danger" id="doSignOut">Abmelden</button>
+      </div>`);
+    document.getElementById('doSignOut').addEventListener('click', async () => {
+      closeSheet();
+      await Store.signOut();
+      people = [];
+      showAuth();
+    });
   }
 
   /* ---------- Events ---------- */
@@ -638,8 +735,89 @@
   ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) =>
     document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
-  /* ---------- Init ---------- */
-  renderList();
+  /* ---------- Start: Sitzung, Anmeldung, Laden ---------- */
+  const bootView = document.getElementById('bootView');
+  const authView = document.getElementById('authView');
+  const appShell = document.getElementById('appShell');
+
+  function show(view) {
+    for (const [node, on] of [[bootView, view === 'boot'], [authView, view === 'auth'], [appShell, view === 'app']]) {
+      node.classList.toggle('hidden', !on);
+      node.setAttribute('aria-hidden', String(!on));
+    }
+  }
+  function showAuth() { show('auth'); }
+
+  document.querySelectorAll('[data-provider]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      try {
+        await Store.signIn(b.dataset.provider);
+      } catch (err) {
+        console.error(err);
+        b.disabled = false;
+        const hint = /provider is not enabled/i.test(err?.message || '')
+          ? 'Dieser Anmeldeweg ist noch nicht freigeschaltet.'
+          : 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.';
+        toast(hint, 'error');
+      }
+    }));
+
+  async function enterApp() {
+    show('app');
+    // Zwischenspeicher sofort zeigen, damit nichts leer wirkt.
+    people = Store.readCache();
+    renderList();
+    try {
+      people = await Store.loadAll();
+      renderList();
+    } catch (err) {
+      console.error(err);
+      toast('Daten konnten nicht geladen werden. Angezeigt wird der letzte Stand.', 'error');
+    }
+    const legacy = Store.legacyData();
+    if (legacy) offerLegacyImport(legacy);
+  }
+
+  // Frueher lokal gespeicherte Eintraege einmalig uebernehmen.
+  function offerLegacyImport(list) {
+    const rounds = list.reduce((n, p) => n + ((p.rounds || []).length), 0);
+    openSheet(`
+      <h3>Frühere Einträge übernehmen?</h3>
+      <p class="sub">Auf diesem Gerät liegen noch ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} mit ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'} aus der Zeit vor der Anmeldung. Sollen sie in dein Konto übernommen werden?</p>
+      <div class="actions">
+        <button class="btn ghost" id="legacySkip">Verwerfen</button>
+        <button class="btn primary" id="legacyTake">Übernehmen</button>
+      </div>`);
+    document.getElementById('legacyTake').addEventListener('click', async () => {
+      const btn = document.getElementById('legacyTake');
+      btn.disabled = true; btn.textContent = 'Wird übernommen…';
+      const ok = await persist(() => Store.importLegacy(list), 'Übernahme fehlgeschlagen.');
+      if (!ok) { btn.disabled = false; btn.textContent = 'Übernehmen'; return; }
+      people = Store.people;
+      closeSheet(); renderList();
+      toast('Einträge übernommen.');
+    });
+    document.getElementById('legacySkip').addEventListener('click', () => {
+      Store.discardLegacy(); closeSheet();
+    });
+  }
+
+  (async function start() {
+    let user = null;
+    try {
+      user = await Store.currentUser();
+    } catch (err) {
+      console.error(err);
+    }
+    if (user) await enterApp(); else showAuth();
+
+    Store.onAuthChange(async (nextUser) => {
+      if (nextUser && appShell.classList.contains('hidden')) await enterApp();
+      else if (!nextUser) { people = []; showAuth(); }
+    });
+  })();
+
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }

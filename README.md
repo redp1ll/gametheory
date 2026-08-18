@@ -15,10 +15,21 @@ verwendeten Themen) und **Details** (Freitext) zu erfassen.
 Die Farben sind auf **Rot-Grün-Sehschwäche** ausgelegt (helles Grün, dunkles Rot – großer
 Helligkeitskontrast), und die Oberfläche kommt ohne dekorative Emojis aus.
 
+## Daten & Anmeldung
+
+Die Einträge liegen in einer Postgres-Datenbank bei Supabase (Region Frankfurt).
+Der Zugriff ist über *Row Level Security* abgesichert: Jede Zeile gehört einem
+Konto, und die Datenbank gibt ausschliesslich die eigenen Zeilen heraus – auch
+dann, wenn jemand den öffentlichen Schlüssel aus dem Quelltext benutzt.
+Angemeldet wird sich über Google.
+
+Beim ersten Anmelden bietet die App an, zuvor lokal gespeicherte Einträge in
+das Konto zu übernehmen. Sicherung und Wiederherstellung als JSON gibt es
+weiterhin im Menü unter „Daten".
+
 ## Nutzung
 
-Keine Installation, kein Build. Alle Daten bleiben lokal im Browser
-(`localStorage`); Export/Import als JSON über das Menü (⋯).
+Keine Installation, kein Build.
 
 **Sofort ausprobieren (lokal):** Repository herunterladen und `index.html`
 im Browser öffnen (Doppelklick). Läuft vollständig, auch offline.
@@ -51,10 +62,13 @@ verhindert das, ohne dich ausbeutbar zu machen.
 
 ## Dateien
 
-- `index.html` — Struktur
-- `app.css` — Design (hell/dunkel automatisch)
+- `index.html` — Struktur und Anmeldebildschirm
+- `app.css` — Design (hell/dunkel/System)
 - `strategies.js` — spieltheoretische Engine (Empfehlung + Begründung)
-- `app.js` — App-Logik, Speicherung, UI
+- `store.js` — Anmeldung und Datenbankzugriff
+- `app.js` — App-Logik und Oberfläche
+- `vendor/supabase.js` — Datenbank-Client (fest eingebunden, damit die App
+  ohne Fremdserver und offline lädt)
 
 ## Lizenz
 
