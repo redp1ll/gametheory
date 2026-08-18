@@ -29,21 +29,26 @@
       <span class="auth-logo" role="img" aria-label="Gambit"></span>
       <h1>Gambit</h1>
       <p class="auth-claim">Wo stehe ich mit wem?</p>
-      <p class="auth-text">Melde dich mit deiner E-Mail-Adresse an. Du bekommst eine Nachricht mit Link und Code – kein Passwort nötig.</p>
+      <p class="auth-text" id="authText">Melde dich an, damit deine Einträge sicher gespeichert sind und auf all deinen Geräten zur Verfügung stehen.</p>
 
-      <form id="emailForm" class="auth-form" novalidate>
-        <input id="authEmail" type="email" inputmode="email" autocomplete="email"
-               autocapitalize="off" spellcheck="false" placeholder="deine@email.de" enterkeyhint="send" />
-        <button type="submit" class="btn primary wide" id="sendLink">Anmeldelink senden</button>
+      <form id="authForm" class="auth-form" novalidate>
+        <input id="authEmail" type="email" inputmode="email" autocomplete="username"
+               autocapitalize="off" spellcheck="false" placeholder="E-Mail-Adresse" enterkeyhint="next" />
+        <input id="authPassword" type="password" autocomplete="current-password"
+               placeholder="Passwort" enterkeyhint="go" />
+        <button type="submit" class="btn primary wide" id="authSubmit">Anmelden</button>
       </form>
 
-      <form id="codeForm" class="auth-form hidden" novalidate>
-        <p class="auth-sent">Wir haben eine E-Mail an <strong id="sentTo"></strong> geschickt.
-          Tippe den Link darin an – oder gib hier den 6-stelligen Code ein.</p>
-        <input id="authCode" type="text" inputmode="numeric" autocomplete="one-time-code"
-               pattern="[0-9]*" maxlength="6" placeholder="123456" enterkeyhint="done" />
-        <button type="submit" class="btn primary wide" id="verifyCode">Anmelden</button>
-        <button type="button" class="btn plain wide" id="backToEmail">Andere E-Mail-Adresse</button>
+      <div class="auth-links">
+        <button type="button" class="btn plain" id="toggleMode">Noch kein Konto? Jetzt anlegen</button>
+        <button type="button" class="btn plain quiet" id="forgotPassword">Passwort vergessen?</button>
+      </div>
+
+      <form id="newPasswordForm" class="auth-form hidden" novalidate>
+        <p class="auth-sent">Wähle ein neues Passwort für dein Konto.</p>
+        <input id="newPassword" type="password" autocomplete="new-password"
+               placeholder="Neues Passwort" enterkeyhint="go" />
+        <button type="submit" class="btn primary wide" id="savePassword">Passwort speichern</button>
       </form>
 
       <p class="auth-note">Deine Einträge sind nur für dich sichtbar. Die Datenbank steht in Frankfurt.</p>

@@ -564,6 +564,7 @@ svg { display: block; }
 .auth-form { display: flex; flex-direction: column; gap: 10px; }
 .auth-form input {
   width: 100%; padding: 15px 16px; border-radius: 13px; text-align: center;
+  -webkit-appearance: none;
   background: var(--fill-4); border: 1px solid transparent; outline: none;
   font-size: 17px; letter-spacing: -0.015em; color: var(--label);
   transition: border-color .18s var(--ease), background .18s var(--ease);
@@ -571,7 +572,10 @@ svg { display: block; }
 .auth-form input::placeholder { color: var(--label-3); }
 .auth-form input:focus { border-color: var(--accent); background: var(--surface); }
 .auth-form input.invalid { border-color: var(--no); }
-#authCode { font-size: 26px; font-weight: 640; letter-spacing: .32em; padding-left: .32em; font-variant-numeric: tabular-nums; }
+#authPassword, #newPassword { text-align: left; }
+.auth-links { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 14px; }
+.auth-links .btn.plain { padding: 8px 12px; font-size: 15px; }
+.auth-links .btn.plain.quiet { color: var(--label-2); font-size: 13.5px; font-weight: 400; }
 .auth-sent { font-size: 14px; color: var(--label-2); line-height: 1.5; margin-bottom: 4px; letter-spacing: -0.008em; }
 .auth-sent strong { color: var(--label); font-weight: 590; }
 .auth-form .btn.plain { padding-block: 10px; font-size: 15px; }

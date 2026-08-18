@@ -748,86 +748,154 @@
   }
   function showAuth() {
     show('auth');
-    codeForm?.classList.add('hidden');
-    emailForm?.classList.remove('hidden');
-    if (codeInput) codeInput.value = '';
+    newPasswordForm?.classList.add('hidden');
+    authForm?.classList.remove('hidden');
+    authLinks?.classList.remove('hidden');
+    if (passwordInput) passwordInput.value = '';
+    setMode('signin');
   }
 
-  const emailForm = document.getElementById('emailForm');
-  const codeForm = document.getElementById('codeForm');
+  const authForm = document.getElementById('authForm');
+  const newPasswordForm = document.getElementById('newPasswordForm');
+  const authLinks = document.querySelector('.auth-links');
   const emailInput = document.getElementById('authEmail');
-  const codeInput = document.getElementById('authCode');
+  const passwordInput = document.getElementById('authPassword');
+  const authText = document.getElementById('authText');
+  const authSubmit = document.getElementById('authSubmit');
+  const toggleModeBtn = document.getElementById('toggleMode');
   const EMAIL_MEMO = 'gambit.email';
-  let pendingEmail = '';
+  const MIN_PASSWORD = 8;
+  let mode = 'signin';
 
   emailInput.value = localStorage.getItem(EMAIL_MEMO) || '';
 
-  function authError(err) {
-    const msg = String(err?.message || '');
-    if (/rate limit|too many|after \d+ seconds/i.test(msg)) {
-      return 'Zu viele Versuche. Bitte warte ein paar Minuten.';
-    }
-    if (/invalid|expired|token/i.test(msg)) {
-      return 'Der Code stimmt nicht oder ist abgelaufen. Fordere einen neuen an.';
-    }
-    if (!navigator.onLine) return 'Keine Verbindung.';
-    return 'Das hat nicht geklappt. Bitte erneut versuchen.';
+  function setMode(next) {
+    mode = next;
+    const signup = mode === 'signup';
+    authText.textContent = signup
+      ? `Lege ein Konto an. Wähle ein Passwort mit mindestens ${MIN_PASSWORD} Zeichen – dein iPhone kann es im Schlüsselbund sichern.`
+      : 'Melde dich an, damit deine Einträge sicher gespeichert sind und auf all deinen Geräten zur Verfügung stehen.';
+    authSubmit.textContent = signup ? 'Konto anlegen' : 'Anmelden';
+    toggleModeBtn.textContent = signup ? 'Ich habe schon ein Konto' : 'Noch kein Konto? Jetzt anlegen';
+    passwordInput.setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+    passwordInput.placeholder = signup ? `Passwort (mind. ${MIN_PASSWORD} Zeichen)` : 'Passwort';
   }
+  setMode('signin');
+  toggleModeBtn.addEventListener('click', () => setMode(mode === 'signup' ? 'signin' : 'signup'));
 
-  emailForm.addEventListener('submit', async (e) => {
+  function authError(err, fallback) {
+    const msg = String(err?.message || '');
+    if (/invalid login credentials/i.test(msg)) return 'E-Mail oder Passwort stimmt nicht.';
+    if (/already registered|already exists/i.test(msg)) return 'Für diese E-Mail gibt es schon ein Konto. Melde dich an.';
+    if (/password.*(short|least|6)/i.test(msg)) return `Das Passwort ist zu kurz (mindestens ${MIN_PASSWORD} Zeichen).`;
+    if (/rate limit|too many|after \d+ seconds/i.test(msg)) return 'Zu viele Versuche. Bitte warte einen Moment.';
+    if (/email.*not confirmed/i.test(msg)) return 'Bitte bestätige zuerst die E-Mail, die wir dir geschickt haben.';
+    if (!navigator.onLine) return 'Keine Verbindung.';
+    return fallback;
+  }
+  const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+  authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = emailInput.value.trim();
-    const btn = document.getElementById('sendLink');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const password = passwordInput.value;
+    if (!validEmail(email)) {
       emailInput.classList.add('invalid'); emailInput.focus();
       toast('Bitte gib eine gültige E-Mail-Adresse ein.', 'error');
       return;
     }
-    btn.disabled = true; btn.textContent = 'Wird gesendet…';
-    try {
-      await Store.requestEmailCode(email);
-      pendingEmail = email;
-      localStorage.setItem(EMAIL_MEMO, email);
-      document.getElementById('sentTo').textContent = email;
-      emailForm.classList.add('hidden');
-      codeForm.classList.remove('hidden');
-      setTimeout(() => codeInput.focus(), 80);
-    } catch (err) {
-      console.error(err);
-      toast(authError(err), 'error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Anmeldelink senden';
-    }
-  });
-  emailInput.addEventListener('input', () => emailInput.classList.remove('invalid'));
-
-  codeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const code = codeInput.value.replace(/\D/g, '');
-    const btn = document.getElementById('verifyCode');
-    if (code.length !== 6) {
-      codeInput.classList.add('invalid'); codeInput.focus();
-      toast('Der Code besteht aus sechs Ziffern.', 'error');
+    if (mode === 'signup' && password.length < MIN_PASSWORD) {
+      passwordInput.classList.add('invalid'); passwordInput.focus();
+      toast(`Das Passwort braucht mindestens ${MIN_PASSWORD} Zeichen.`, 'error');
       return;
     }
-    btn.disabled = true; btn.textContent = 'Wird geprüft…';
+    if (!password) {
+      passwordInput.classList.add('invalid'); passwordInput.focus();
+      toast('Bitte gib dein Passwort ein.', 'error');
+      return;
+    }
+    const label = authSubmit.textContent;
+    authSubmit.disabled = true;
+    authSubmit.textContent = mode === 'signup' ? 'Wird angelegt…' : 'Wird geprüft…';
     try {
-      await Store.verifyEmailCode(pendingEmail, code);
+      localStorage.setItem(EMAIL_MEMO, email);
+      if (mode === 'signup') {
+        const { session } = await Store.signUp(email, password);
+        if (!session) {
+          // E-Mail-Bestaetigung ist eingeschaltet: erst nach dem Klick geht es weiter.
+          toast('Fast geschafft: Bestätige die E-Mail, die wir dir geschickt haben.');
+          setMode('signin');
+          return;
+        }
+      } else {
+        await Store.signInWithPassword(email, password);
+      }
+      passwordInput.value = '';
       await enterApp();
     } catch (err) {
       console.error(err);
-      toast(authError(err), 'error');
-      btn.disabled = false; btn.textContent = 'Anmelden';
+      toast(authError(err, mode === 'signup'
+        ? 'Das Konto konnte nicht angelegt werden.'
+        : 'Anmeldung fehlgeschlagen.'), 'error');
+    } finally {
+      authSubmit.disabled = false; authSubmit.textContent = label;
     }
   });
-  codeInput.addEventListener('input', () => codeInput.classList.remove('invalid'));
+  emailInput.addEventListener('input', () => emailInput.classList.remove('invalid'));
+  passwordInput.addEventListener('input', () => passwordInput.classList.remove('invalid'));
 
-  document.getElementById('backToEmail').addEventListener('click', () => {
-    codeForm.classList.add('hidden');
-    emailForm.classList.remove('hidden');
-    codeInput.value = '';
-    emailInput.focus();
+  // Notausgang: Link zum Zuruecksetzen anfordern.
+  document.getElementById('forgotPassword').addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    if (!validEmail(email)) {
+      emailInput.classList.add('invalid'); emailInput.focus();
+      toast('Trage zuerst deine E-Mail-Adresse ein.', 'error');
+      return;
+    }
+    try {
+      await Store.requestPasswordReset(email);
+      toast('Wir haben dir einen Link zum Zurücksetzen geschickt.');
+    } catch (err) {
+      console.error(err);
+      toast(authError(err, 'Der Link konnte nicht gesendet werden.'), 'error');
+    }
   });
+
+  // Nach dem Klick auf den Zuruecksetzen-Link: neues Passwort waehlen.
+  function showPasswordReset() {
+    show('auth');
+    authForm.classList.add('hidden');
+    authLinks.classList.add('hidden');
+    newPasswordForm.classList.remove('hidden');
+    authText.textContent = 'Du kannst jetzt ein neues Passwort setzen.';
+    setTimeout(() => document.getElementById('newPassword').focus(), 80);
+  }
+  newPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const field = document.getElementById('newPassword');
+    const btn = document.getElementById('savePassword');
+    if (field.value.length < MIN_PASSWORD) {
+      field.classList.add('invalid'); field.focus();
+      toast(`Das Passwort braucht mindestens ${MIN_PASSWORD} Zeichen.`, 'error');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Wird gespeichert…';
+    try {
+      await Store.updatePassword(field.value);
+      field.value = '';
+      newPasswordForm.classList.add('hidden');
+      authForm.classList.remove('hidden');
+      authLinks.classList.remove('hidden');
+      toast('Passwort gespeichert.');
+      await enterApp();
+    } catch (err) {
+      console.error(err);
+      toast(authError(err, 'Das Passwort konnte nicht gespeichert werden.'), 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Passwort speichern';
+    }
+  });
+  document.getElementById('newPassword').addEventListener('input', (e) => e.target.classList.remove('invalid'));
 
   async function enterApp() {
     show('app');
@@ -878,7 +946,8 @@
     }
     if (user) await enterApp(); else showAuth();
 
-    Store.onAuthChange(async (nextUser) => {
+    Store.onAuthChange(async (nextUser, event) => {
+      if (event === 'PASSWORD_RECOVERY') { showPasswordReset(); return; }
       if (nextUser && appShell.classList.contains('hidden')) await enterApp();
       else if (!nextUser) { people = []; showAuth(); }
     });

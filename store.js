@@ -67,31 +67,44 @@
     return state.user;
   }
   function onAuthChange(fn) {
-    client.auth.onAuthStateChange((_event, session) => {
+    client.auth.onAuthStateChange((event, session) => {
       state.user = session?.user || null;
-      fn(state.user);
+      fn(state.user, event);
     });
   }
   function redirectTo() {
     return location.origin + location.pathname;
   }
-  // Anmeldung per E-Mail: Es geht eine Nachricht mit Link UND Code raus.
-  // Der Link ist bequem am Rechner; der Code funktioniert auch dann, wenn
-  // die App auf dem Startbildschirm liegt und der Link in einem anderen
-  // Browser aufgehen wuerde.
-  async function requestEmailCode(email) {
-    const { error } = await client.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo(), shouldCreateUser: true },
-    });
-    if (error) throw error;
-  }
-  async function verifyEmailCode(email, token) {
-    const { data, error } = await client.auth.verifyOtp({ email, token, type: 'email' });
+  // Anmeldung mit E-Mail und Passwort. Braucht keinen Mailversand und
+  // funktioniert damit auch in der auf dem Startbildschirm installierten App.
+  async function signInWithPassword(email, password) {
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
     state.user = data.user;
     return data.user;
   }
+  // Legt ein Konto an. Ist die E-Mail-Bestaetigung abgeschaltet, entsteht
+  // sofort eine Sitzung; sonst kommt zuerst eine Bestaetigungsmail.
+  async function signUp(email, password) {
+    const { data, error } = await client.auth.signUp({
+      email, password, options: { emailRedirectTo: redirectTo() },
+    });
+    if (error) throw error;
+    state.user = data.session ? data.user : null;
+    return { user: data.user, session: data.session };
+  }
+  // Notausgang, falls das Passwort vergessen wurde.
+  async function requestPasswordReset(email) {
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() });
+    if (error) throw error;
+  }
+  async function updatePassword(password) {
+    const { data, error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    state.user = data.user;
+    return data.user;
+  }
+
   async function signOut() {
     await client.auth.signOut();
     state.people = [];
@@ -223,7 +236,8 @@
 
   global.GambitStore = {
     client, state,
-    currentUser, onAuthChange, requestEmailCode, verifyEmailCode, signOut,
+    currentUser, onAuthChange, signInWithPassword, signUp,
+    requestPasswordReset, updatePassword, signOut,
     loadAll,
     addPerson, updatePerson, deletePerson,
     addRound, updateRound, deleteRound,
