@@ -55,3 +55,21 @@ verhindert das, ohne dich ausbeutbar zu machen.
 - `app.css` — Design (hell/dunkel automatisch)
 - `strategies.js` — spieltheoretische Engine (Empfehlung + Begründung)
 - `app.js` — App-Logik, Speicherung, UI
+
+## Lizenz
+
+© 2026 redp1ll. Veröffentlicht unter der
+**[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/)**
+(siehe [`LICENSE`](LICENSE)).
+
+- ✅ **Erlaubt:** Ansehen, Ausprobieren und Nutzung für **nicht-kommerzielle**
+  Zwecke (privat, Bildung, Forschung, gemeinnützige Organisationen).
+- ⛔ **Nicht erlaubt:** jede **kommerzielle Nutzung** – dazu zählt u. a., die App
+  oder Teile davon zu verkaufen, in ein kommerzielles Produkt einzubauen oder
+  damit Einnahmen zu erzielen.
+
+**Kommerzielle Nutzung?** Dafür ist eine separate Lizenz nötig – bitte den
+Inhaber über ein [GitHub-Issue](https://github.com/redp1ll/gametheory/issues)
+kontaktieren.
+
+*Alle nicht ausdrücklich gewährten Rechte bleiben vorbehalten.*

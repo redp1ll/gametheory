@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#4f46e5" />
+  <meta name="theme-color" content="#f2f2f7" id="themeColorMeta" />
   <meta name="description" content="Behalte auf Basis der Spieltheorie (Tit for Tat) den Überblick, mit wem du wo stehst." />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Gambit" />
   <title>Gambit — Beziehungsstrategie</title>
   <link rel="manifest" href="manifest.webmanifest" />
@@ -18,40 +18,62 @@
   <link rel="icon" href="icon-dark-192.png" media="(prefers-color-scheme: dark)" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo-mark" role="img" aria-label="Gambit"></span>
-      <div class="brand-text">
-        <h1>Gambit</h1>
-        <p>Wo stehe ich mit wem?</p>
+  <header class="nav" id="nav">
+    <div class="nav-row">
+      <div class="nav-brand">
+        <span class="logo-mark" role="img" aria-label="Gambit"></span>
+        <span class="nav-compact-title">Gambit</span>
       </div>
-    </div>
-    <div class="topbar-actions">
-      <button id="menuBtn" class="icon-btn" aria-label="Menü" title="Menü">⋯</button>
+      <button id="menuBtn" class="icon-btn" aria-label="Menü">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/>
+        </svg>
+      </button>
     </div>
   </header>
 
-  <main id="listView" class="view">
-    <div class="list-head">
-      <div class="search-wrap">
-        <input id="search" type="search" placeholder="Person suchen…" autocomplete="off" />
-      </div>
+  <div class="large-title-block" id="largeTitle">
+    <h1>Gambit</h1>
+    <p>Wo stehe ich mit wem?</p>
+  </div>
+
+  <div class="search-block">
+    <div class="search" id="searchWrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 21 21"/>
+      </svg>
+      <input id="search" type="search" placeholder="Suchen" autocomplete="off" enterkeyhint="search" />
+      <button class="search-clear" id="searchClear" aria-label="Suche löschen">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.5 12.1-1.4 1.4L12 13.4l-2.1 2.1-1.4-1.4L10.6 12 8.5 9.9l1.4-1.4L12 10.6l2.1-2.1 1.4 1.4L13.4 12l2.1 2.1Z"/>
+        </svg>
+      </button>
     </div>
+  </div>
+
+  <main id="listView" class="wrap">
     <ul id="peopleList" class="people"></ul>
     <div id="emptyState" class="empty hidden">
-      <div class="empty-emoji">🧭</div>
+      <svg class="empty-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/>
+        <path d="M19 8v6M22 11h-6"/>
+      </svg>
       <h2>Noch niemand angelegt</h2>
-      <p>Lege deine erste Person an und dokumentiere, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
-      <button class="btn primary" data-add>Erste Person anlegen</button>
+      <p>Lege deine erste Person an und halte fest, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
+      <button class="btn primary" style="flex:0 0 auto;padding-inline:26px" data-add>Person anlegen</button>
     </div>
   </main>
 
-  <button id="fab" class="fab" aria-label="Person hinzufügen" title="Person hinzufügen">＋</button>
+  <button id="fab" class="fab" aria-label="Person hinzufügen">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  </button>
 
-  <!-- Detail-Ansicht -->
-  <section id="detailView" class="view detail hidden" aria-hidden="true"></section>
-
-  <!-- Modal-Container -->
+  <section id="detailView" class="detail hidden" aria-hidden="true"></section>
   <div id="modalRoot"></div>
 
   <script src="strategies.js"></script>
