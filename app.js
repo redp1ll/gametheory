@@ -15,7 +15,6 @@
   const ICON = {
     back:    (s = 20) => S('<path d="M14.5 4.5 7 12l7.5 7.5"/>', { s, w: 2.4 }),
     chevron: (s = 15) => S('<path d="M9 5.5 15.5 12 9 18.5"/>', { s, w: 2.2 }),
-    pencil:  (s = 19) => S('<path d="M4 20.5h3.6L19.1 9a2.5 2.5 0 0 0-3.6-3.6L4 16.9v3.6Z"/><path d="M14.4 6.6 17.9 10"/>', { s, w: 1.9 }),
     dots:    (s = 20) => S('<circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/>', { s, fill: 'currentColor' }),
     check:   (s = 19) => S('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>', { s, w: 2.6 }),
     plus:    (s = 20) => S('<path d="M12 5v14M5 12h14"/>', { s, w: 2.4 }),
@@ -213,10 +212,7 @@
     detailView.innerHTML = `
       <div class="detail-nav">
         <button class="nav-back glass" id="backBtn" aria-label="Zurück">${ICON.back()}</button>
-        <div class="nav-capsule glass">
-          <button class="icon-btn" id="editBtn" aria-label="Bearbeiten">${ICON.pencil()}</button>
-          <button class="icon-btn" id="moreBtn" aria-label="Weitere Optionen">${ICON.dots()}</button>
-        </div>
+        <button class="nav-back glass" id="moreBtn" aria-label="Menü">${ICON.dots()}</button>
       </div>
 
       <div class="wrap">
@@ -285,7 +281,6 @@
       </div>`;
 
     detailView.querySelector('#backBtn').addEventListener('click', () => history.back());
-    detailView.querySelector('#editBtn').addEventListener('click', () => openPersonSheet(p));
     detailView.querySelector('#moreBtn').addEventListener('click', () => openPersonMenu(p));
     detailView.querySelector('#stratRow').addEventListener('click', () => openStrategyPicker(p));
     detailView.querySelectorAll('[data-log]').forEach((b) =>
@@ -322,36 +317,51 @@
 
   /* ---------- Sheets ---------- */
   const modalRoot = document.getElementById('modalRoot');
-  function openSheet(inner) {
+  let dismissHandler = null;
+  // onDismiss wird nur beim Schließen durch den Nutzer aufgerufen (Hintergrund,
+  // Escape, [data-close]) – nicht, wenn ein Sheet ein anderes öffnet.
+  function openSheet(inner, onDismiss) {
     const overlay = el(`<div class="scrim"><div class="sheet"><div class="grabber"></div>${inner}</div></div>`);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSheet(); });
-    overlay.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', closeSheet));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) dismissSheet(); });
+    overlay.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', dismissSheet));
     modalRoot.innerHTML = '';
     modalRoot.appendChild(overlay);
+    dismissHandler = onDismiss || null;
     return overlay;
   }
-  function closeSheet() { modalRoot.innerHTML = ''; }
+  function closeSheet() { dismissHandler = null; modalRoot.innerHTML = ''; }
+  function dismissSheet() {
+    const handler = dismissHandler;
+    dismissHandler = null;
+    modalRoot.innerHTML = '';
+    if (handler) handler();
+  }
 
-  /* Person anlegen / bearbeiten */
-  function openPersonSheet(existing) {
+  /* Person anlegen / bearbeiten. `draft` bewahrt Eingaben beim Abstecher
+     in die Strategie-Auswahl. */
+  function openPersonSheet(existing, draft) {
     const isEdit = !!existing;
-    let strategy = isEdit ? existing.strategy : DEFAULT_STRATEGY;
+    const state = draft || {
+      name: isEdit ? existing.name : '',
+      context: isEdit ? (existing.context || '') : '',
+      strategy: isEdit ? existing.strategy : DEFAULT_STRATEGY,
+    };
     openSheet(`
       <h3>${isEdit ? 'Person bearbeiten' : 'Neue Person'}</h3>
       <p class="sub">${isEdit ? 'Name, Kontext und Strategie anpassen.' : 'Mit wem willst du deine Züge im Blick behalten?'}</p>
       <div class="field">
         <label>Name</label>
-        <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${isEdit ? esc(existing.name) : ''}" enterkeyhint="done" />
+        <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${esc(state.name)}" enterkeyhint="done" />
       </div>
       <div class="field">
         <label>Kontext <span class="opt">optional</span></label>
-        <input id="pContext" type="text" placeholder="z. B. Nachbar · Parkplatz" value="${isEdit ? esc(existing.context || '') : ''}" />
+        <input id="pContext" type="text" placeholder="z. B. Nachbar · Parkplatz" value="${esc(state.context)}" />
       </div>
       <div class="field">
         <label>Strategie</label>
         <div class="rows">
           <button class="row" id="pStratRow">
-            <span class="row-main"><span class="row-title" id="pStratName">${esc(STRATEGIES[strategy].name)}</span></span>
+            <span class="row-main"><span class="row-title" id="pStratName">${esc(STRATEGIES[state.strategy].name)}</span>\n            <span class="row-sub">${esc(STRATEGIES[state.strategy].tagline)}</span></span>
             <span class="chev">${ICON.chevron()}</span>
           </button>
         </div>
@@ -362,24 +372,25 @@
       </div>`);
     const nameInput = document.getElementById('pName');
     setTimeout(() => nameInput.focus(), 80);
-    document.getElementById('pStratRow').addEventListener('click', () => {
-      pickStrategy(strategy, (sid) => {
-        strategy = sid;
-        document.getElementById('pStratName').textContent = STRATEGIES[sid].name;
-      }, () => openPersonSheetRestore());
+    // Aktuelle Eingaben einsammeln, damit sie den Abstecher überleben.
+    const readDraft = () => ({
+      name: nameInput.value,
+      context: document.getElementById('pContext').value,
+      strategy: state.strategy,
     });
-    // Beim Zurückkehren aus dem Strategie-Picker den Zustand bewahren
-    function openPersonSheetRestore() {
-      const draft = { name: nameInput.value, context: document.getElementById('pContext').value };
-      openPersonSheet(isEdit ? existing : null);
-      document.getElementById('pName').value = draft.name;
-      document.getElementById('pContext').value = draft.context;
-      document.getElementById('pStratName').textContent = STRATEGIES[strategy].name;
-    }
+    document.getElementById('pStratRow').addEventListener('click', () => {
+      const current = readDraft();
+      pickStrategy(
+        state.strategy,
+        (sid) => openPersonSheet(existing, { ...current, strategy: sid }),
+        () => openPersonSheet(existing, current)
+      );
+    });
     document.getElementById('savePerson').addEventListener('click', () => {
       const name = nameInput.value.trim();
       if (!name) { nameInput.classList.add('invalid'); nameInput.focus(); return; }
       const context = document.getElementById('pContext').value.trim();
+      const strategy = state.strategy;
       if (isEdit) {
         existing.name = name; existing.context = context; existing.strategy = strategy;
         save(); closeSheet(); renderDetail(); renderList();
@@ -393,7 +404,7 @@
   }
 
   /* Strategie-Auswahl (Radioliste mit Häkchen) */
-  function pickStrategy(current, onPick, onDone) {
+  function pickStrategy(current, onPick, onDismiss) {
     const rows = order.map((sid) => {
       const s = STRATEGIES[sid];
       return `<button class="row" data-sid="${sid}">
@@ -408,12 +419,14 @@
       <h3>Strategie wählen</h3>
       <p class="sub">Empfohlen für den Alltag: Großzügiges Tit for Tat – es verzeiht einen einzelnen Ausrutscher.</p>
       <div class="rows">${rows}</div>
-      <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`);
+      <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`, onDismiss);
     document.querySelectorAll('[data-sid]').forEach((b) =>
-      b.addEventListener('click', () => { onPick(b.dataset.sid); (onDone || closeSheet)(); }));
+      b.addEventListener('click', () => onPick(b.dataset.sid)));
   }
   function openStrategyPicker(p) {
-    pickStrategy(p.strategy, (sid) => { p.strategy = sid; save(); renderDetail(); renderList(); }, closeSheet);
+    pickStrategy(p.strategy, (sid) => {
+      p.strategy = sid; save(); closeSheet(); renderDetail(); renderList();
+    });
   }
 
   /* Runden-Editor */
@@ -484,12 +497,10 @@
       <p class="sub">${p.rounds.length} ${p.rounds.length === 1 ? 'Interaktion' : 'Interaktionen'} festgehalten.</p>
       <div class="rows">
         <button class="row" id="mEdit"><span class="row-main"><span class="row-title">Bearbeiten</span></span><span class="chev">${ICON.chevron()}</span></button>
-        <button class="row" id="mStrat"><span class="row-main"><span class="row-title">Strategie ändern</span></span><span class="chev">${ICON.chevron()}</span></button>
         <button class="row destructive" id="mDel"><span class="row-main"><span class="row-title">Person löschen</span></span></button>
       </div>
       <div class="actions"><button class="btn ghost wide" data-close>Abbrechen</button></div>`);
     document.getElementById('mEdit').addEventListener('click', () => openPersonSheet(p));
-    document.getElementById('mStrat').addEventListener('click', () => openStrategyPicker(p));
     document.getElementById('mDel').addEventListener('click', () => confirmDeletePerson(p.id));
   }
 
@@ -616,12 +627,16 @@
   window.addEventListener('popstate', () => { if (!detailView.classList.contains('hidden')) closeDetail(); });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (modalRoot.innerHTML) closeSheet();
+    if (modalRoot.innerHTML) dismissSheet();
     else if (!detailView.classList.contains('hidden')) history.back();
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getTheme() === 'system') applyTheme('system');
   });
+
+  // Zoom unterbinden: Pinch-Gesten abfangen (iOS ignoriert user-scalable in Safari).
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) =>
+    document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
   /* ---------- Init ---------- */
   renderList();
