@@ -177,13 +177,23 @@
     searchInput.value = ''; renderList(); searchInput.focus();
   });
 
-  /* Große Überschrift beim Scrollen einklappen */
+  /* Feine Trennlinie unter der Kopfzeile, sobald gescrollt wird */
   const nav = document.getElementById('nav');
-  const largeTitle = document.getElementById('largeTitle');
-  new IntersectionObserver(
-    ([e]) => nav.classList.toggle('stuck', !e.isIntersecting),
-    { rootMargin: '-64px 0px 0px 0px', threshold: 0 }
-  ).observe(largeTitle);
+  const onScroll = () => nav.classList.toggle('stuck', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* Die Suchleiste sitzt unten und muss der Tastatur ausweichen. */
+  const vv = window.visualViewport;
+  if (vv) {
+    const trackKeyboard = () => {
+      const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb', Math.round(hidden) + 'px');
+    };
+    vv.addEventListener('resize', trackKeyboard);
+    vv.addEventListener('scroll', trackKeyboard);
+    trackKeyboard();
+  }
 
   /* ---------- Detailansicht ---------- */
   const detailView = document.getElementById('detailView');
@@ -718,7 +728,7 @@
   }
 
   /* ---------- Events ---------- */
-  document.getElementById('fab').addEventListener('click', () => openPersonSheet(null));
+  document.getElementById('addBtn').addEventListener('click', () => openPersonSheet(null));
   document.getElementById('menuBtn').addEventListener('click', openMainMenu);
   document.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => openPersonSheet(null)));
   window.addEventListener('popstate', () => { if (!detailView.classList.contains('hidden')) closeDetail(); });
