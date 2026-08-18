@@ -130,6 +130,7 @@
 
 /* ---------- Basis ---------- */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { touch-action: manipulation; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
