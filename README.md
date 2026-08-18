@@ -15,10 +15,25 @@ verwendeten Themen) und **Details** (Freitext) zu erfassen.
 Die Farben sind auf **Rot-Grün-Sehschwäche** ausgelegt (helles Grün, dunkles Rot – großer
 Helligkeitskontrast), und die Oberfläche kommt ohne dekorative Emojis aus.
 
+## Daten & Anmeldung
+
+Die Einträge liegen in einer Postgres-Datenbank bei Supabase (Region Frankfurt).
+Der Zugriff ist über *Row Level Security* abgesichert: Jede Zeile gehört einem
+Konto, und die Datenbank gibt ausschliesslich die eigenen Zeilen heraus – auch
+dann, wenn jemand den öffentlichen Schlüssel aus dem Quelltext benutzt.
+Angemeldet wird sich mit E-Mail und Passwort. Das braucht keinen Mailversand
+und funktioniert deshalb auch in der auf dem Startbildschirm installierten App;
+das iPhone kann das Passwort im Schlüsselbund sichern und per Face ID
+ausfüllen. Wer sein Passwort vergisst, fordert über „Passwort vergessen" einen
+Link zum Zurücksetzen an.
+
+Beim ersten Anmelden bietet die App an, zuvor lokal gespeicherte Einträge in
+das Konto zu übernehmen. Sicherung und Wiederherstellung als JSON gibt es
+weiterhin im Menü unter „Daten".
+
 ## Nutzung
 
-Keine Installation, kein Build. Alle Daten bleiben lokal im Browser
-(`localStorage`); Export/Import als JSON über das Menü (⋯).
+Keine Installation, kein Build.
 
 **Sofort ausprobieren (lokal):** Repository herunterladen und `index.html`
 im Browser öffnen (Doppelklick). Läuft vollständig, auch offline.
@@ -38,11 +53,11 @@ bereitstellen – am einfachsten **GitHub Pages**:
 
 | Strategie | Kurz |
 |---|---|
-| 🕊️ **Großzügiges Tit for Tat** *(Standard)* | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
-| 🧠 **Contrite Tit for Tat** | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
-| 🪞 **Tit for Tat** | Der Klassiker: spiegelt exakt den letzten Zug. Fair, aber streng. |
-| 🎯 **Pavlov** (Win-Stay, Lose-Shift) | Behält bei, was funktioniert; wechselt, was nicht. Durchsetzungsstark. |
-| ⛔ **Grim Trigger** | Ein Vertrauensbruch = für immer keine Kooperation mehr. |
+| **Großzügiges Tit for Tat** *(Standard)* | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
+| **Contrite Tit for Tat** | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
+| **Tit for Tat** | Der Klassiker: spiegelt exakt den letzten Zug. Fair, aber streng. |
+| **Pavlov** (Win-Stay, Lose-Shift) | Behält bei, was funktioniert; wechselt, was nicht. Durchsetzungsstark. |
+| **Grim Trigger** | Ein Vertrauensbruch = für immer keine Kooperation mehr. |
 
 **Warum „großzügig" als Standard?** In echten Beziehungen gibt es „Rauschen"
 (schlechte Tage, Missverständnisse). Ein rein spiegelndes Tit for Tat gerät nach
@@ -51,10 +66,13 @@ verhindert das, ohne dich ausbeutbar zu machen.
 
 ## Dateien
 
-- `index.html` — Struktur
-- `app.css` — Design (hell/dunkel automatisch)
+- `index.html` — Struktur und Anmeldebildschirm
+- `app.css` — Design (hell/dunkel/System)
 - `strategies.js` — spieltheoretische Engine (Empfehlung + Begründung)
-- `app.js` — App-Logik, Speicherung, UI
+- `store.js` — Anmeldung und Datenbankzugriff
+- `app.js` — App-Logik und Oberfläche
+- `vendor/supabase.js` — Datenbank-Client (fest eingebunden, damit die App
+  ohne Fremdserver und offline lädt)
 
 ## Lizenz
 
@@ -62,9 +80,9 @@ verhindert das, ohne dich ausbeutbar zu machen.
 **[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/)**
 (siehe [`LICENSE`](LICENSE)).
 
-- ✅ **Erlaubt:** Ansehen, Ausprobieren und Nutzung für **nicht-kommerzielle**
+- **Erlaubt:** Ansehen, Ausprobieren und Nutzung für **nicht-kommerzielle**
   Zwecke (privat, Bildung, Forschung, gemeinnützige Organisationen).
-- ⛔ **Nicht erlaubt:** jede **kommerzielle Nutzung** – dazu zählt u. a., die App
+- **Nicht erlaubt:** jede **kommerzielle Nutzung** – dazu zählt u. a., die App
   oder Teile davon zu verkaufen, in ein kommerzielles Produkt einzubauen oder
   damit Einnahmen zu erzielen.
 

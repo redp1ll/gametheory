@@ -18,65 +18,109 @@
   <link rel="icon" href="icon-dark-192.png" media="(prefers-color-scheme: dark)" />
 </head>
 <body>
-  <header class="nav" id="nav">
-    <div class="nav-row">
-      <div class="nav-brand">
-        <span class="logo-mark" role="img" aria-label="Gambit"></span>
-        <span class="nav-compact-title">Gambit</span>
+  <!-- Startzustand, bis die Sitzung geprüft ist -->
+  <div id="bootView" class="boot">
+    <span class="spinner" aria-label="Wird geladen"></span>
+  </div>
+
+  <!-- Anmeldung -->
+  <section id="authView" class="auth hidden" aria-hidden="true">
+    <div class="auth-inner">
+      <span class="auth-logo" role="img" aria-label="Gambit"></span>
+      <h1>Gambit</h1>
+      <p class="auth-claim">Wo stehe ich mit wem?</p>
+      <p class="auth-text" id="authText">Melde dich an, damit deine Einträge sicher gespeichert sind und auf all deinen Geräten zur Verfügung stehen.</p>
+
+      <form id="authForm" class="auth-form" novalidate>
+        <input id="authEmail" type="email" inputmode="email" autocomplete="username"
+               autocapitalize="off" spellcheck="false" placeholder="E-Mail-Adresse" enterkeyhint="next" />
+        <input id="authPassword" type="password" autocomplete="current-password"
+               placeholder="Passwort" enterkeyhint="go" />
+        <button type="submit" class="btn primary wide" id="authSubmit">Anmelden</button>
+      </form>
+
+      <div class="auth-links">
+        <button type="button" class="btn plain" id="toggleMode">Noch kein Konto? Jetzt anlegen</button>
+        <button type="button" class="btn plain quiet" id="forgotPassword">Passwort vergessen?</button>
       </div>
-      <button id="menuBtn" class="icon-btn" aria-label="Menü">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/>
-        </svg>
-      </button>
+
+      <form id="newPasswordForm" class="auth-form hidden" novalidate>
+        <p class="auth-sent">Wähle ein neues Passwort für dein Konto.</p>
+        <input id="newPassword" type="password" autocomplete="new-password"
+               placeholder="Neues Passwort" enterkeyhint="go" />
+        <button type="submit" class="btn primary wide" id="savePassword">Passwort speichern</button>
+      </form>
+
+      <p class="auth-note">Deine Einträge sind nur für dich sichtbar. Die Datenbank steht in Frankfurt.</p>
     </div>
-  </header>
+  </section>
 
-  <div class="large-title-block" id="largeTitle">
-    <h1>Gambit</h1>
-    <p>Wo stehe ich mit wem?</p>
-  </div>
+  <!-- App -->
+  <div id="appShell" class="hidden">
+    <header class="nav" id="nav">
+      <div class="nav-row">
+        <div class="nav-brand">
+          <span class="logo-mark" role="img" aria-label="Gambit"></span>
+          <span class="nav-compact-title">Gambit</span>
+        </div>
+        <button id="menuBtn" class="icon-btn" aria-label="Menü">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/>
+          </svg>
+        </button>
+      </div>
+    </header>
 
-  <div class="search-block">
-    <div class="search" id="searchWrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <div class="large-title-block" id="largeTitle">
+      <h1>Gambit</h1>
+      <p>Wo stehe ich mit wem?</p>
+    </div>
+
+    <div class="search-block">
+      <div class="search" id="searchWrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 21 21"/>
+        </svg>
+        <input id="search" type="search" placeholder="Suchen" autocomplete="off" enterkeyhint="search" />
+        <button class="search-clear" id="searchClear" aria-label="Suche löschen">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.5 12.1-1.4 1.4L12 13.4l-2.1 2.1-1.4-1.4L10.6 12 8.5 9.9l1.4-1.4L12 10.6l2.1-2.1 1.4 1.4L13.4 12l2.1 2.1Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <main id="listView" class="wrap">
+      <ul id="peopleList" class="people"></ul>
+      <div id="emptyState" class="empty hidden">
+        <svg class="empty-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/>
+          <path d="M19 8v6M22 11h-6"/>
+        </svg>
+        <h2>Noch niemand angelegt</h2>
+        <p>Lege deine erste Person an und halte fest, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
+        <button class="btn primary" style="flex:0 0 auto;padding-inline:26px" data-add>Person anlegen</button>
+      </div>
+    </main>
+
+    <button id="fab" class="fab" aria-label="Person hinzufügen">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-        <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 21 21"/>
+        <path d="M12 5v14M5 12h14"/>
       </svg>
-      <input id="search" type="search" placeholder="Suchen" autocomplete="off" enterkeyhint="search" />
-      <button class="search-clear" id="searchClear" aria-label="Suche löschen">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.5 12.1-1.4 1.4L12 13.4l-2.1 2.1-1.4-1.4L10.6 12 8.5 9.9l1.4-1.4L12 10.6l2.1-2.1 1.4 1.4L13.4 12l2.1 2.1Z"/>
-        </svg>
-      </button>
-    </div>
+    </button>
+
+    <section id="detailView" class="detail hidden" aria-hidden="true"></section>
   </div>
 
-  <main id="listView" class="wrap">
-    <ul id="peopleList" class="people"></ul>
-    <div id="emptyState" class="empty hidden">
-      <svg class="empty-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/>
-        <path d="M19 8v6M22 11h-6"/>
-      </svg>
-      <h2>Noch niemand angelegt</h2>
-      <p>Lege deine erste Person an und halte fest, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
-      <button class="btn primary" style="flex:0 0 auto;padding-inline:26px" data-add>Person anlegen</button>
-    </div>
-  </main>
-
-  <button id="fab" class="fab" aria-label="Person hinzufügen">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-      <path d="M12 5v14M5 12h14"/>
-    </svg>
-  </button>
-
-  <section id="detailView" class="detail hidden" aria-hidden="true"></section>
   <div id="modalRoot"></div>
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
 
+  <script src="vendor/supabase.js"></script>
   <script src="strategies.js"></script>
+  <script src="store.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
