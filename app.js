@@ -500,7 +500,7 @@
     const suggestions = distinctTopics().map((t) => `<option value="${esc(t)}"></option>`).join('');
     openSheet(`
       <h3>${isNew ? 'Interaktion ergänzen' : 'Interaktion bearbeiten'}</h3>
-      <p class="sub">Alles optional – jederzeit über den Verlauf änderbar.</p>
+      <p class="sub">${isNew ? 'Die Interaktion ist bereits erfasst. Datum, Thema und Details sind optional.' : 'Alles optional – jederzeit über den Verlauf änderbar.'}</p>
       <div class="field">
         <label>Verhalten</label>
         <div class="seg" id="reSeg">
@@ -522,8 +522,8 @@
         <textarea id="reDetails" placeholder="Notizen zu dieser Interaktion…">${esc(round.details || '')}</textarea>
       </div>
       <div class="actions">
-        <button class="btn ghost" data-close>${isNew ? 'Überspringen' : 'Abbrechen'}</button>
-        <button class="btn primary" id="reSave">Sichern</button>
+        ${isNew ? '' : '<button class="btn ghost" data-close>Abbrechen</button>'}
+        <button class="btn primary${isNew ? ' wide' : ''}" id="reSave">Sichern</button>
       </div>
       ${isNew ? '' : `<div class="actions"><button class="btn plain wide" id="reDel" style="color:var(--no-text)">Interaktion löschen</button></div>`}`);
     document.querySelectorAll('#reSeg button').forEach((b) =>
