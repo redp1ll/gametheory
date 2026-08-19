@@ -148,11 +148,15 @@ body {
   overscroll-behavior: none;
 }
 /* Feste Hoehe statt Dokument-Scroll – so wandern Kopf- und Fussleiste beim
-   Ueberscrollen nicht mit. --vh folgt der sichtbaren Hoehe (Tastatur). */
+   Ueberscrollen nicht mit. Die Hoehe bleibt stabil: Bei eingeblendeter
+   Tastatur schiebt das System die Ansicht selbst zurecht; ein zusaetzliches
+   Verkleinern durch uns hat sich damit ueberlagert und die Anordnung
+   zerlegt. */
 #appShell {
-  height: var(--vh, 100dvh);
+  height: 100%;
   display: flex; flex-direction: column; overflow: hidden;
 }
+@supports (height: 100dvh) { #appShell { height: 100dvh; } }
 button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
 button { background: none; border: none; cursor: pointer; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.022em; }
@@ -238,8 +242,9 @@ svg { display: block; }
 
 /* ---------- Personen-Liste (Inset Grouped) ---------- */
 .wrap#listView {
-  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; padding-top: 6px; padding-bottom: 10px;
+  width: 100%; flex: 1; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding-top: 6px; padding-bottom: 12px;
 }
 .people { list-style: none; background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
 .person-row {

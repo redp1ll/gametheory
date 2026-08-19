@@ -184,20 +184,6 @@
   listScroller.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  /* Der App-Rahmen folgt der sichtbaren Hoehe, damit die Suchleiste bei
-     eingeblendeter Tastatur direkt darueber sitzt. */
-  const vv = window.visualViewport;
-  const trackViewport = () => {
-    const h = vv ? vv.height : window.innerHeight;
-    document.documentElement.style.setProperty('--vh', Math.round(h) + 'px');
-  };
-  if (vv) {
-    vv.addEventListener('resize', trackViewport);
-    vv.addEventListener('scroll', trackViewport);
-  }
-  window.addEventListener('orientationchange', () => setTimeout(trackViewport, 200));
-  trackViewport();
-
   /* ---------- Detailansicht ---------- */
   const detailView = document.getElementById('detailView');
 
