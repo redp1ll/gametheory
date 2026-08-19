@@ -39,7 +39,8 @@
       strategy: person.strategy,
       created: new Date(person.created_at).getTime(),
       rounds: (rounds || []).map((r) => ({
-        id: r.id, opp: r.opp, date: dateToMs(r.occurred_on), seq: r.created_at,
+        id: r.id, opp: r.opp, mine: r.mine || null,
+        date: dateToMs(r.occurred_on), seq: r.created_at,
         topic: r.topic || '', details: r.details || '',
       })),
     };
@@ -158,10 +159,10 @@
     state.people = state.people.filter((p) => p.id !== id);
     cache();
   }
-  async function addRound(personId, { opp, date, topic, details }) {
+  async function addRound(personId, { opp, mine, date, topic, details }) {
     const { data, error } = await client.from('rounds')
       .insert({
-        user_id: state.user.id, person_id: personId, opp,
+        user_id: state.user.id, person_id: personId, opp, mine: mine || null,
         occurred_on: msToDate(date || Date.now()), topic: topic || '', details: details || '',
       })
       .select().single();
@@ -169,7 +170,8 @@
     const person = state.people.find((p) => p.id === personId);
     if (!person) throw new Error('Datenbestand nicht aktuell – bitte neu laden.');
     const round = {
-      id: data.id, opp: data.opp, date: dateToMs(data.occurred_on), seq: data.created_at,
+      id: data.id, opp: data.opp, mine: data.mine || null,
+      date: dateToMs(data.occurred_on), seq: data.created_at,
       topic: data.topic, details: data.details,
     };
     person.rounds.push(round);
@@ -180,7 +182,7 @@
   async function updateRound(personId, roundId, patch) {
     const { error } = await client.from('rounds')
       .update({
-        opp: patch.opp, occurred_on: msToDate(patch.date),
+        opp: patch.opp, mine: patch.mine || null, occurred_on: msToDate(patch.date),
         topic: patch.topic || '', details: patch.details || '',
       })
       .eq('id', roundId);
@@ -221,6 +223,7 @@
       for (const r of (p.rounds || [])) {
         await addRound(person.id, {
           opp: r.opp === 'D' ? 'D' : 'C',
+          mine: r.mine === 'C' || r.mine === 'D' ? r.mine : null,
           date: r.date || Date.now(),
           topic: r.topic || '', details: r.details || '',
         });

@@ -451,7 +451,9 @@ svg { display: block; }
   box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .2);
 }
 .mdot svg { width: 13px; height: 13px; }
-.mdot.me { width: 20px; height: 20px; opacity: .85; }
+.mdot.me { width: 20px; height: 20px; opacity: .8; }
+/* Abweichend erfasster eigener Zug: keine Ableitung, sondern Tatsache. */
+.mdot.me.own { opacity: 1; outline: 2px solid var(--label-3); outline-offset: 2px; }
 .mdot.me svg { width: 11px; height: 11px; }
 .mdot.sm { width: 18px; height: 18px; }
 .mdot.sm svg { width: 10px; height: 10px; }
@@ -562,6 +564,9 @@ svg { display: block; }
 .seg button i.c { background: var(--ok); }
 .seg button i.d { background: var(--no); }
 .seg button.on { background: var(--surface); box-shadow: var(--shadow-1); }
+.seg.triple button { font-size: 13px; padding-inline: 4px; gap: 5px; }
+.field-hint { font-size: 12.5px; color: var(--label-2); line-height: 1.45; margin-top: 8px; padding-left: 2px; }
+.field-hint strong { color: var(--label); font-weight: 590; }
 :root[data-theme="dark"] .seg button.on { background: var(--fill-2); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button.on { background: var(--fill-2); } }
 

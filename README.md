@@ -68,6 +68,22 @@ dann wird verziehen – oder ein grundloser Angriff, auf den reagiert wird.
 Die Kreise im Spielverlauf tragen zusätzlich zur Farbe einen **Haken** bzw. ein
 **Minus**, damit die Bedeutung nicht allein an Rot und Grün hängt.
 
+## Eigene Züge
+
+Die obere Reihe („Ich") wird normalerweise aus der Strategie abgeleitet: Gambit
+nimmt an, dass du der Empfehlung gefolgt bist. Hast du dich anders verhalten,
+kannst du das im Interaktions-Fenster festhalten. Solche Runden sind im
+Spielverlauf umrandet.
+
+Das ist keine reine Dokumentation: **Contrite** und **Pavlov** lesen deinen
+eigenen Zug und ändern daraufhin die nächste Empfehlung. Contrite arbeitet dabei
+mit dem Ansehen beider Seiten – wer gegenüber einem fairen Gegenüber nicht
+kooperiert, verliert sein Ansehen und stellt es durch Kooperation wieder her.
+Eine Nichtkooperation gegen jemanden in schlechtem Ansehen gilt als berechtigte
+Reaktion und wird nicht vergolten. So erkennt Contrite auch Reaktionen, die erst
+eine Runde später kommen. Tit for Tat, Großzügiges Tit for Tat und Grim Trigger
+schauen dagegen nur auf den anderen – dort ändert dein eigener Zug nichts.
+
 ## Dateien
 
 - `index.html` — Struktur und Anmeldebildschirm
