@@ -419,23 +419,26 @@ svg { display: block; }
 @media (hover: hover) { .mg-col.tap:hover { background: var(--fill-4); } }
 .mg-col.last { background: var(--fill-4); }
 
-/* Neu ergaenzte Runde kurz hervorheben, damit der Zusammenhang zwischen
-   Erfassen und Spielverlauf sichtbar wird. */
-.mg-col.flash::after {
-  content: ''; position: absolute; inset: -3px; border-radius: 13px;
-  box-shadow: 0 0 0 2px var(--accent); pointer-events: none;
-  animation: flashRing 2.6s ease-out forwards;
+/* Neu ergaenzte Runde blinkt kurz auf, damit der Zusammenhang zwischen
+   Erfassen und Spielverlauf unmittelbar sichtbar wird. */
+.mg-col.flash .mdot { animation: dotBlink 1.9s var(--ease) both; }
+@keyframes dotBlink {
+  0%   { transform: scale(.4);  opacity: 0; }
+  12%  { transform: scale(1.35); opacity: 1; filter: brightness(1.6); }
+  25%  { transform: scale(1);              filter: brightness(1); }
+  40%  { transform: scale(1.35);           filter: brightness(1.6); }
+  53%  { transform: scale(1);              filter: brightness(1); }
+  68%  { transform: scale(1.35);           filter: brightness(1.6); }
+  81%  { transform: scale(1);              filter: brightness(1); }
+  100% { transform: scale(1); }
 }
-@keyframes flashRing { 0%, 45% { opacity: 1; } 100% { opacity: 0; } }
-.mg-col.flash .mdot { animation: dotIn .5s var(--ease) both; }
-@keyframes dotIn {
-  0%   { transform: scale(.25); opacity: 0; }
-  60%  { transform: scale(1.18); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
+/* Auch die Rundennummer hebt sich kurz hervor. */
+.mg-col.flash .mg-num { color: var(--accent); font-weight: 700; animation: numFade 2.2s ease-out forwards; }
+@keyframes numFade { 0%, 55% { opacity: 1; } 100% { opacity: .45; } }
+
 @media (prefers-reduced-motion: reduce) {
   .mg-col.flash .mdot { animation: none; }
-  .mg-col.flash::after { animation: flashRing 2.6s steps(1, end) forwards; }
+  .mg-col.flash .mg-num { animation: none; }
 }
 .mg-num {
   height: var(--mg-num); display: grid; place-items: center;
