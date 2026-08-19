@@ -95,7 +95,7 @@
   const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
   /* ---------- Spielverlauf-Raster ---------- */
-  function buildMatchGrid(p) {
+  function buildMatchGrid(p, flashId) {
     const opp = p.rounds.map((r) => r.opp);
     if (!opp.length) {
       return `<div class="card"><div class="mg-empty">Noch keine Runden. Halte oben die erste Interaktion fest.</div></div>`;
@@ -105,7 +105,8 @@
       const r = p.rounds[i];
       const noted = (r.topic || r.details) ? '<span class="mg-note"></span>' : '';
       const last = i === opp.length - 1 ? ' last' : '';
-      return `<div class="mg-col tap${last}" data-round="${r.id}">
+      const flash = r.id === flashId ? ' flash' : '';
+      return `<div class="mg-col tap${last}${flash}" data-round="${r.id}">
           <div class="mg-num">${i + 1}</div>
           <div class="mg-cell"><span class="mdot me ${my[i] === 'C' ? 'c' : 'd'}"></span></div>
           <div class="mg-cell"><span class="mdot ${m === 'C' ? 'c' : 'd'}"></span>${noted}</div>
@@ -225,7 +226,7 @@
     currentId = null;
   }
 
-  function renderDetail() {
+  function renderDetail(flashId) {
     const p = byId(currentId);
     if (!p) return closeDetail();
     const opp = p.rounds.map((r) => r.opp);
@@ -285,9 +286,9 @@
           </div>
         </div>
 
-        <div class="section">
+        <div class="section" id="historySection">
           <div class="section-hd">Spielverlauf</div>
-          ${buildMatchGrid(p)}
+          ${buildMatchGrid(p, flashId)}
         </div>
 
         <div class="section">
@@ -328,6 +329,14 @@
     requestAnimationFrame(() => {
       const sc = detailView.querySelector('#matchScroll');
       if (sc) sc.scrollLeft = sc.scrollWidth;
+      // Nach dem Erfassen zum Spielverlauf scrollen, damit die neue Runde
+      // sichtbar wird – sonst bleibt unklar, ob sie angekommen ist.
+      if (!flashId) return;
+      const section = detailView.querySelector('#historySection');
+      if (!section) return;
+      const ziel = section.getBoundingClientRect().top
+        - detailView.getBoundingClientRect().top + detailView.scrollTop - 70;
+      detailView.scrollTo({ top: Math.max(0, ziel), behavior: 'smooth' });
     });
   }
 
@@ -339,6 +348,16 @@
   }
 
   /* ---------- Aktionen ---------- */
+  // Nach dem Erfassen: Runde hervorheben, zum Spielverlauf scrollen und die
+  // Rundennummer bestaetigen.
+  function revealRound(personId, roundId) {
+    const p = byId(personId);
+    const nr = p ? p.rounds.findIndex((r) => r.id === roundId) + 1 : 0;
+    renderDetail(roundId);
+    renderList();
+    if (nr) toast(`Runde ${nr} im Spielverlauf ergänzt.`);
+  }
+
   async function logInteraction(id, move) {
     const p = byId(id); if (!p) return;
     let created = null;
@@ -525,7 +544,8 @@
         ${isNew ? '' : '<button class="btn ghost" data-close>Abbrechen</button>'}
         <button class="btn primary${isNew ? ' wide' : ''}" id="reSave">Sichern</button>
       </div>
-      ${isNew ? '' : `<div class="actions"><button class="btn plain wide" id="reDel" style="color:var(--no-text)">Interaktion löschen</button></div>`}`);
+      ${isNew ? '' : `<div class="actions"><button class="btn plain wide" id="reDel" style="color:var(--no-text)">Interaktion löschen</button></div>`}`,
+      isNew ? () => revealRound(personId, roundId) : undefined);
     document.querySelectorAll('#reSeg button').forEach((b) =>
       b.addEventListener('click', () => {
         move = b.dataset.move;
@@ -543,7 +563,8 @@
       const ok = await persist(() => Store.updateRound(personId, roundId, patch),
         'Interaktion konnte nicht gespeichert werden.');
       if (!ok) { btn.disabled = false; btn.textContent = 'Sichern'; return; }
-      closeSheet(); renderDetail(); renderList();
+      closeSheet();
+      revealRound(personId, roundId);
     });
     const del = document.getElementById('reDel');
     if (del) del.addEventListener('click', () => { closeSheet(); deleteRound(personId, roundId); renderList(); });

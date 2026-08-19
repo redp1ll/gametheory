@@ -410,6 +410,7 @@ svg { display: block; }
 .mg-scroll::-webkit-scrollbar { display: none; }
 .mg-track { display: flex; gap: var(--mg-gap); width: max-content; }
 .mg-col {
+  position: relative;
   width: var(--mg-col); display: flex; flex-direction: column; align-items: center;
   border-radius: 10px; transition: background .15s var(--ease);
 }
@@ -417,6 +418,25 @@ svg { display: block; }
 .mg-col.tap:active { background: var(--fill-4); }
 @media (hover: hover) { .mg-col.tap:hover { background: var(--fill-4); } }
 .mg-col.last { background: var(--fill-4); }
+
+/* Neu ergaenzte Runde kurz hervorheben, damit der Zusammenhang zwischen
+   Erfassen und Spielverlauf sichtbar wird. */
+.mg-col.flash::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 13px;
+  box-shadow: 0 0 0 2px var(--accent); pointer-events: none;
+  animation: flashRing 2.6s ease-out forwards;
+}
+@keyframes flashRing { 0%, 45% { opacity: 1; } 100% { opacity: 0; } }
+.mg-col.flash .mdot { animation: dotIn .5s var(--ease) both; }
+@keyframes dotIn {
+  0%   { transform: scale(.25); opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-col.flash .mdot { animation: none; }
+  .mg-col.flash::after { animation: flashRing 2.6s steps(1, end) forwards; }
+}
 .mg-num {
   height: var(--mg-num); display: grid; place-items: center;
   font-size: 11px; font-weight: 500; color: var(--label-3); font-variant-numeric: tabular-nums;
