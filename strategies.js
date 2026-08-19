@@ -19,7 +19,7 @@
     generous_tft: {
       id: 'generous_tft',
       name: 'Großzügiges Tit for Tat',
-      tagline: 'Empfohlen · verzeiht einen einzelnen Ausrutscher',
+      tagline: 'Verzeiht einen einzelnen Ausrutscher',
       blurb:
         'Startet freundlich, spiegelt das Verhalten des anderen – verzeiht aber einen einmaligen Ausrutscher. Erst bei ZWEI Fehltritten hintereinander wird nicht mehr kooperiert. Robust gegen Missverständnisse.',
       decide(ctx) {
@@ -62,7 +62,7 @@
     contrite_tft: {
       id: 'contrite_tft',
       name: 'Contrite Tit for Tat',
-      tagline: 'Klug · erkennt „wer hat angefangen"',
+      tagline: 'Empfohlen · erkennt „wer hat angefangen"',
       blurb:
         'Wie Tit for Tat, aber es unterscheidet: Hat der andere dich zu RECHT bestraft (weil du selbst zuletzt nicht kooperiert hast), verzeihst du. Hat er dich GRUNDLOS angegriffen, reagierst du. Verhindert Rache-Schleifen.',
       decide(ctx) {
@@ -128,7 +128,7 @@
     },
   };
 
-  const DEFAULT_STRATEGY = 'generous_tft';
+  const DEFAULT_STRATEGY = 'contrite_tft';
 
   // Meine Züge per Replay rekonstruieren (myMove[n] = Empfehlung aus 0..n-1).
   function replayMyMoves(strategyId, oppMoves) {
@@ -154,7 +154,7 @@
   global.Gambit = {
     STRATEGIES,
     DEFAULT_STRATEGY,
-    order: ['generous_tft', 'contrite_tft', 'tft', 'pavlov', 'grim'],
+    order: ['contrite_tft', 'generous_tft', 'tft', 'pavlov', 'grim'],
     recommend,
     replayMyMoves,
   };

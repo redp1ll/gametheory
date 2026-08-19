@@ -101,6 +101,10 @@
       return `<div class="card"><div class="mg-empty">Noch keine Runden. Halte oben die erste Interaktion fest.</div></div>`;
     }
     const my = window.Gambit.replayMyMoves(p.strategy, opp);
+    // Haken und Minus zusaetzlich zur Farbe: Die Bedeutung haengt damit nicht
+    // allein an Rot und Gruen.
+    const mark = (m, klein) => `<span class="mdot${klein ? ' me' : ''} ${m === 'C' ? 'c' : 'd'}">`
+      + (m === 'C' ? ICON.check(klein ? 11 : 13) : ICON.minus(klein ? 11 : 13)) + '</span>';
     const cols = opp.map((m, i) => {
       const r = p.rounds[i];
       const noted = (r.topic || r.details) ? '<span class="mg-note"></span>' : '';
@@ -108,8 +112,8 @@
       const flash = r.id === flashId ? ' flash' : '';
       return `<div class="mg-col tap${last}${flash}" data-round="${r.id}">
           <div class="mg-num">${i + 1}</div>
-          <div class="mg-cell"><span class="mdot me ${my[i] === 'C' ? 'c' : 'd'}"></span></div>
-          <div class="mg-cell"><span class="mdot ${m === 'C' ? 'c' : 'd'}"></span>${noted}</div>
+          <div class="mg-cell">${mark(my[i], true)}</div>
+          <div class="mg-cell">${mark(m)}${noted}</div>
         </div>`;
     }).join('');
     return `
@@ -122,8 +126,8 @@
         <div class="mg-scroll" id="matchScroll"><div class="mg-track">${cols}</div></div>
       </div>
       <div class="legend">
-        <span><i class="c"></i>kooperiert</span>
-        <span><i class="d"></i>nicht kooperiert</span>
+        <span><span class="mdot sm c">${ICON.check(10)}</span>kooperiert</span>
+        <span><span class="mdot sm d">${ICON.minus(10)}</span>nicht kooperiert</span>
       </div>
       <div class="note">Tippe eine Spalte, um Datum, Thema und Details zu bearbeiten.</div>`;
   }
@@ -484,7 +488,7 @@
     }).join('');
     openSheet(`
       <h3>Strategie wählen</h3>
-      <p class="sub">Empfohlen für den Alltag: Großzügiges Tit for Tat – es verzeiht einen einzelnen Ausrutscher.</p>
+      <p class="sub">Empfohlen: Contrite Tit for Tat – es verzeiht, wenn du zu Recht bestraft wurdest, und reagiert nur auf grundlose Angriffe.</p>
       <div class="rows">${rows}</div>
       <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`, onDismiss);
     document.querySelectorAll('[data-sid]').forEach((b) =>
@@ -671,7 +675,7 @@
     }).join('');
     openSheet(`
       <h3>Über die Strategien</h3>
-      <p class="sub">Jede Person kann eine eigene Strategie nutzen. Der Standard verzeiht einen einzelnen Ausrutscher, damit ein Missverständnis die Kooperation nicht dauerhaft zerstört.</p>
+      <p class="sub">Jede Person kann eine eigene Strategie nutzen. Der Standard erkennt, ob eine Nichtkooperation eine berechtigte Reaktion auf dein eigenes Verhalten war – so entstehen keine Rache-Schleifen aus einem Missverständnis.</p>
       <div class="rows">${rows}</div>
       <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`);
   }

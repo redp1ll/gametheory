@@ -53,16 +53,20 @@ bereitstellen – am einfachsten **GitHub Pages**:
 
 | Strategie | Kurz |
 |---|---|
-| **Großzügiges Tit for Tat** *(Standard)* | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
-| **Contrite Tit for Tat** | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
+| **Contrite Tit for Tat** *(Standard)* | Erkennt, ob der andere dich *zu Recht* bestraft hat (→ verzeihen) oder grundlos angriff (→ reagieren). |
+| **Großzügiges Tit for Tat** | Startet nett, spiegelt, **verzeiht einen einzelnen Ausrutscher**. Robust gegen Missverständnisse. |
 | **Tit for Tat** | Der Klassiker: spiegelt exakt den letzten Zug. Fair, aber streng. |
 | **Pavlov** (Win-Stay, Lose-Shift) | Behält bei, was funktioniert; wechselt, was nicht. Durchsetzungsstark. |
 | **Grim Trigger** | Ein Vertrauensbruch = für immer keine Kooperation mehr. |
 
-**Warum „großzügig" als Standard?** In echten Beziehungen gibt es „Rauschen"
+**Warum Contrite als Standard?** In echten Beziehungen gibt es „Rauschen"
 (schlechte Tage, Missverständnisse). Ein rein spiegelndes Tit for Tat gerät nach
-einem einzelnen Fehler in eine endlose Vergeltungsschleife. Etwas Nachsicht
-verhindert das, ohne dich ausbeutbar zu machen.
+einem einzelnen Fehler in eine endlose Vergeltungsschleife. Contrite unterscheidet,
+ob eine Nichtkooperation die berechtigte Antwort auf das eigene Verhalten war –
+dann wird verziehen – oder ein grundloser Angriff, auf den reagiert wird.
+
+Die Kreise im Spielverlauf tragen zusätzlich zur Farbe einen **Haken** bzw. ein
+**Minus**, damit die Bedeutung nicht allein an Rot und Grün hängt.
 
 ## Dateien
 
