@@ -464,7 +464,7 @@ svg { display: block; }
 .mg-empty { padding: 26px 18px; text-align: center; font-size: 14px; color: var(--label-3); letter-spacing: -0.006em; }
 
 .legend { display: flex; align-items: center; gap: 14px; padding: 10px 6px 0; flex-wrap: wrap; }
-.legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--label-2); }
+.legend > span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--label-2); }
 
 
 /* ---------- Statistiken ---------- */

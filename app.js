@@ -362,16 +362,12 @@
     if (nr) toast(`Runde ${nr} im Spielverlauf ergänzt.`);
   }
 
-  async function logInteraction(id, move) {
-    const p = byId(id); if (!p) return;
-    let created = null;
-    const ok = await persist(async () => {
-      created = await Store.addRound(id, { opp: move, date: Date.now() });
-    }, 'Interaktion konnte nicht gespeichert werden.');
-    if (!ok || !created) return;
-    renderDetail(); renderList();
-    openRoundSheet(id, created.id, true);
+  // Beim Tippen entsteht noch nichts: Erst „Sichern" legt die Interaktion an.
+  function logInteraction(id, move) {
+    if (!byId(id)) return;
+    openRoundSheet(id, null, move);
   }
+
   async function deleteRound(id, roundId) {
     const ok = await persist(() => Store.deleteRound(id, roundId),
       'Interaktion konnte nicht gelöscht werden.');
@@ -516,59 +512,72 @@
   }
   function fromDateInput(v) { const t = Date.parse(`${v}T12:00`); return Number.isNaN(t) ? null : t; }
 
-  function openRoundSheet(personId, roundId, isNew = false) {
-    const p = byId(personId); const round = p?.rounds.find((r) => r.id === roundId);
-    if (!round) return;
-    let move = round.opp;
+  // Ein Fenster fuer beide Faelle. Beim Anlegen entsteht die Interaktion erst
+  // mit „Sichern" – „Abbrechen" legt bewusst nichts an.
+  function openRoundSheet(personId, roundId, neuerZug) {
+    const p = byId(personId);
+    const round = roundId ? p?.rounds.find((r) => r.id === roundId) : null;
+    const isNew = !round;
+    if (!isNew && !round) return;
+    const entwurf = {
+      opp: isNew ? neuerZug : round.opp,
+      date: isNew ? Date.now() : round.date,
+      topic: isNew ? '' : (round.topic || ''),
+      details: isNew ? '' : (round.details || ''),
+    };
     const suggestions = distinctTopics().map((t) => `<option value="${esc(t)}"></option>`).join('');
     openSheet(`
-      <h3>${isNew ? 'Interaktion ergänzen' : 'Interaktion bearbeiten'}</h3>
-      <p class="sub">${isNew ? 'Die Interaktion ist bereits erfasst. Datum, Thema und Details sind optional.' : 'Alles optional – jederzeit über den Verlauf änderbar.'}</p>
+      <h3>${isNew ? 'Interaktion festhalten' : 'Interaktion bearbeiten'}</h3>
+      <p class="sub">${isNew
+        ? 'Datum, Thema und Details sind optional. Mit „Sichern" wird die Interaktion angelegt.'
+        : 'Alles änderbar – auch nachträglich.'}</p>
       <div class="field">
         <label>Verhalten</label>
         <div class="seg" id="reSeg">
-          <button type="button" class="${move === 'C' ? 'on' : ''}" data-move="C"><i class="c"></i>War nett</button>
-          <button type="button" class="${move === 'D' ? 'on' : ''}" data-move="D"><i class="d"></i>Nicht nett</button>
+          <button type="button" class="${entwurf.opp === 'C' ? 'on' : ''}" data-move="C"><i class="c"></i>War nett</button>
+          <button type="button" class="${entwurf.opp === 'D' ? 'on' : ''}" data-move="D"><i class="d"></i>Nicht nett</button>
         </div>
       </div>
       <div class="field">
         <label>Datum</label>
-        <input id="reDate" type="date" value="${toDateInput(round.date)}" />
+        <input id="reDate" type="date" value="${toDateInput(entwurf.date)}" />
       </div>
       <div class="field">
         <label>Thema <span class="opt">frei eingeben oder wählen</span></label>
-        <input id="reTopic" list="topicSuggestions" placeholder="z. B. Projekt-Deadline" value="${esc(round.topic || '')}" autocomplete="off" />
+        <input id="reTopic" list="topicSuggestions" placeholder="z. B. Projekt-Deadline" value="${esc(entwurf.topic)}" autocomplete="off" />
         <datalist id="topicSuggestions">${suggestions}</datalist>
       </div>
       <div class="field">
         <label>Details <span class="opt">optional</span></label>
-        <textarea id="reDetails" placeholder="Notizen zu dieser Interaktion…">${esc(round.details || '')}</textarea>
+        <textarea id="reDetails" placeholder="Notizen zu dieser Interaktion…">${esc(entwurf.details)}</textarea>
       </div>
       <div class="actions">
-        ${isNew ? '' : '<button class="btn ghost" data-close>Abbrechen</button>'}
-        <button class="btn primary${isNew ? ' wide' : ''}" id="reSave">Sichern</button>
+        <button class="btn ghost" data-close>Abbrechen</button>
+        <button class="btn primary" id="reSave">Sichern</button>
       </div>
-      ${isNew ? '' : `<div class="actions"><button class="btn plain wide" id="reDel" style="color:var(--no-text)">Interaktion löschen</button></div>`}`,
-      isNew ? () => revealRound(personId, roundId) : undefined);
+      ${isNew ? '' : `<div class="actions"><button class="btn plain wide" id="reDel" style="color:var(--no-text)">Interaktion löschen</button></div>`}`);
     document.querySelectorAll('#reSeg button').forEach((b) =>
       b.addEventListener('click', () => {
-        move = b.dataset.move;
+        entwurf.opp = b.dataset.move;
         document.querySelectorAll('#reSeg button').forEach((x) => x.classList.toggle('on', x === b));
       }));
     document.getElementById('reSave').addEventListener('click', async () => {
-      const patch = {
-        opp: move,
+      const werte = {
+        opp: entwurf.opp,
         topic: document.getElementById('reTopic').value.trim(),
         details: document.getElementById('reDetails').value.trim(),
-        date: fromDateInput(document.getElementById('reDate').value) || round.date,
+        date: fromDateInput(document.getElementById('reDate').value) || entwurf.date,
       };
       const btn = document.getElementById('reSave');
       btn.disabled = true; btn.textContent = 'Wird gesichert…';
-      const ok = await persist(() => Store.updateRound(personId, roundId, patch),
-        'Interaktion konnte nicht gespeichert werden.');
+      let ziel = roundId;
+      const ok = await persist(async () => {
+        if (isNew) ziel = (await Store.addRound(personId, werte)).id;
+        else await Store.updateRound(personId, roundId, werte);
+      }, isNew ? 'Interaktion konnte nicht angelegt werden.' : 'Interaktion konnte nicht gespeichert werden.');
       if (!ok) { btn.disabled = false; btn.textContent = 'Sichern'; return; }
       closeSheet();
-      revealRound(personId, roundId);
+      revealRound(personId, ziel);
     });
     const del = document.getElementById('reDel');
     if (del) del.addEventListener('click', () => { closeSheet(); deleteRound(personId, roundId); renderList(); });
