@@ -177,23 +177,26 @@
     searchInput.value = ''; renderList(); searchInput.focus();
   });
 
-  /* Feine Trennlinie unter der Kopfzeile, sobald gescrollt wird */
+  /* Feine Trennlinie unter der Kopfzeile, sobald die Liste gescrollt wird */
   const nav = document.getElementById('nav');
-  const onScroll = () => nav.classList.toggle('stuck', window.scrollY > 4);
-  window.addEventListener('scroll', onScroll, { passive: true });
+  const listScroller = document.getElementById('listView');
+  const onScroll = () => nav.classList.toggle('stuck', listScroller.scrollTop > 4);
+  listScroller.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  /* Die Suchleiste sitzt unten und muss der Tastatur ausweichen. */
+  /* Der App-Rahmen folgt der sichtbaren Hoehe, damit die Suchleiste bei
+     eingeblendeter Tastatur direkt darueber sitzt. */
   const vv = window.visualViewport;
+  const trackViewport = () => {
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vh', Math.round(h) + 'px');
+  };
   if (vv) {
-    const trackKeyboard = () => {
-      const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      document.documentElement.style.setProperty('--kb', Math.round(hidden) + 'px');
-    };
-    vv.addEventListener('resize', trackKeyboard);
-    vv.addEventListener('scroll', trackKeyboard);
-    trackKeyboard();
+    vv.addEventListener('resize', trackViewport);
+    vv.addEventListener('scroll', trackViewport);
   }
+  window.addEventListener('orientationchange', () => setTimeout(trackViewport, 200));
+  trackViewport();
 
   /* ---------- Detailansicht ---------- */
   const detailView = document.getElementById('detailView');
@@ -204,13 +207,11 @@
     detailView.classList.remove('hidden');
     detailView.setAttribute('aria-hidden', 'false');
     detailView.scrollTop = 0;
-    document.body.style.overflow = 'hidden';
     history.pushState({ detail: id }, '');
   }
   function closeDetail() {
     detailView.classList.add('hidden');
     detailView.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
     currentId = null;
   }
 
