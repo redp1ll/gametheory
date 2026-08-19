@@ -41,9 +41,12 @@
   applyTheme(getTheme());
 
   /* ---------- State ---------- */
-  let people = [];
+  // Es gibt genau einen Datenbestand: den der Datenschicht. Eine eigene Kopie
+  // hier waere bei einem fehlgeschlagenen Laden stillschweigend veraltet –
+  // Schreibvorgaenge landeten dann in der Datenbank, aber nie in der Anzeige.
   let currentId = null;
-  function byId(id) { return people.find((p) => p.id === id); }
+  const people = () => Store.people;
+  function byId(id) { return Store.people.find((p) => p.id === id); }
 
   // Kurze Rueckmeldung am unteren Rand.
   const toastRoot = document.getElementById('toastRoot');
@@ -61,7 +64,7 @@
     } catch (err) {
       console.error(err);
       toast(failureMessage + ' ' + (navigator.onLine ? 'Bitte erneut versuchen.' : 'Keine Verbindung.'), 'error');
-      try { people = await Store.loadAll(); } catch { /* Serverstand nicht erreichbar */ }
+      try { await Store.loadAll(); } catch { /* Serverstand nicht erreichbar */ }
       renderList();
       if (currentId && !detailView.classList.contains('hidden')) renderDetail();
       return false;
@@ -133,12 +136,12 @@
   function renderList() {
     const q = searchInput.value.trim().toLowerCase();
     searchWrap.classList.toggle('filled', q.length > 0);
-    const filtered = people
+    const filtered = people()
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.context || '').toLowerCase().includes(q))
       .sort((a, b) => (b.rounds.at(-1)?.date || b.created) - (a.rounds.at(-1)?.date || a.created));
 
     peopleList.innerHTML = '';
-    const noneAtAll = people.length === 0;
+    const noneAtAll = people().length === 0;
     emptyState.classList.toggle('hidden', !noneAtAll);
     peopleList.classList.toggle('hidden', noneAtAll || filtered.length === 0);
     if (noneAtAll) return;
@@ -176,6 +179,22 @@
   document.getElementById('searchClear').addEventListener('click', () => {
     searchInput.value = ''; renderList(); searchInput.focus();
   });
+
+  /* Sichtbaren Bereich nachfuehren: Bei eingeblendeter Tastatur verkleinert
+     und verschiebt das System die Ansicht. Ohne Nachfuehrung springt die
+     Oberflaeche, weil das System zusaetzlich selbst scrollt. */
+  const vp = document.getElementById('vp');
+  const vv = window.visualViewport;
+  function followViewport() {
+    if (!vv) return;
+    vp.style.height = vv.height + 'px';
+    vp.style.transform = `translateY(${vv.offsetTop}px)`;
+  }
+  if (vv) {
+    vv.addEventListener('resize', followViewport);
+    vv.addEventListener('scroll', followViewport);
+    followViewport();
+  }
 
   /* Feine Trennlinie unter der Kopfzeile, sobald die Liste gescrollt wird */
   const nav = document.getElementById('nav');
@@ -460,7 +479,7 @@
   /* Runden-Editor */
   function distinctTopics() {
     const set = new Set();
-    for (const pp of people) for (const r of pp.rounds) if (r.topic && r.topic.trim()) set.add(r.topic.trim());
+    for (const pp of people()) for (const r of pp.rounds) if (r.topic && r.topic.trim()) set.add(r.topic.trim());
     return [...set].sort((a, b) => a.localeCompare(b, 'de'));
   }
   function toDateInput(ts) {
@@ -632,10 +651,10 @@
   }
 
   function openDataSheet() {
-    const rounds = people.reduce((n, p) => n + p.rounds.length, 0);
+    const rounds = people().reduce((n, p) => n + p.rounds.length, 0);
     openSheet(`
       <h3>Daten</h3>
-      <p class="sub">In deinem Konto gespeichert: ${people.length} ${people.length === 1 ? 'Person' : 'Personen'}, ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}.</p>
+      <p class="sub">In deinem Konto gespeichert: ${people().length} ${people().length === 1 ? 'Person' : 'Personen'}, ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}.</p>
       <div class="rows">
         <button class="row" id="dExport"><span class="row-main"><span class="row-title">Sicherung exportieren</span>
           <span class="row-sub">Als JSON-Datei speichern</span></span><span class="chev">${ICON.chevron()}</span></button>
@@ -648,7 +667,7 @@
   }
 
   function exportData() {
-    const blob = new Blob([JSON.stringify({ app: 'gambit', v: 1, people }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ app: 'gambit', v: 1, people: people() }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `gambit-${new Date().toISOString().slice(0, 10)}.json`;
@@ -681,7 +700,7 @@
     const rounds = list.reduce((n, p) => n + ((p.rounds || []).length), 0);
     openSheet(`
       <h3>Sicherung einspielen?</h3>
-      <p class="sub">Die Datei enthält ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} und ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}. Dein aktueller Bestand (${people.length} ${people.length === 1 ? 'Person' : 'Personen'}) wird dabei <strong>ersetzt</strong>.</p>
+      <p class="sub">Die Datei enthält ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} und ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'}. Dein aktueller Bestand (${people().length} ${people().length === 1 ? 'Person' : 'Personen'}) wird dabei <strong>ersetzt</strong>.</p>
       <div class="actions">
         <button class="btn ghost" data-close>Abbrechen</button>
         <button class="btn danger" id="doImport">Ersetzen</button>
@@ -691,7 +710,6 @@
       btn.disabled = true; btn.textContent = 'Wird eingespielt…';
       const ok = await persist(() => Store.importBackup(list), 'Die Sicherung konnte nicht eingespielt werden.');
       if (!ok) { btn.disabled = false; btn.textContent = 'Ersetzen'; return; }
-      people = Store.people;
       closeSheet(); renderList();
       toast('Sicherung eingespielt.');
     });
@@ -709,7 +727,6 @@
     document.getElementById('doSignOut').addEventListener('click', async () => {
       closeSheet();
       await Store.signOut();
-      people = [];
       showAuth();
     });
   }
@@ -896,18 +913,44 @@
 
   async function enterApp() {
     show('app');
-    // Zwischenspeicher sofort zeigen, damit nichts leer wirkt.
-    people = Store.readCache();
+    // Zwischenspeicher direkt in die Datenschicht laden, damit Anzeige und
+    // Schreibvorgaenge denselben Bestand verwenden.
+    Store.people = Store.readCache();
     renderList();
     try {
-      people = await Store.loadAll();
+      await Store.loadAll();
       renderList();
     } catch (err) {
       console.error(err);
-      toast('Daten konnten nicht geladen werden. Angezeigt wird der letzte Stand.', 'error');
+      offerReload();
+      return;
     }
     const legacy = Store.legacyData();
     if (legacy) offerLegacyImport(legacy);
+  }
+
+  // Ohne geladenen Serverstand darf nicht weitergearbeitet werden: Neue
+  // Eintraege wuerden sonst gespeichert, aber nicht angezeigt.
+  function offerReload() {
+    openSheet(`
+      <h3>Daten nicht erreichbar</h3>
+      <p class="sub">Deine Einträge konnten nicht geladen werden. Angezeigt wird der zuletzt bekannte Stand. Bitte lade erneut, bevor du etwas erfasst – sonst kann Gespeichertes fehlen.</p>
+      <div class="actions">
+        <button class="btn ghost" data-close>Später</button>
+        <button class="btn primary" id="retryLoad">Erneut laden</button>
+      </div>`);
+    document.getElementById('retryLoad').addEventListener('click', async () => {
+      const btn = document.getElementById('retryLoad');
+      btn.disabled = true; btn.textContent = 'Wird geladen…';
+      try {
+        await Store.loadAll();
+        closeSheet(); renderList();
+        toast('Daten geladen.');
+      } catch {
+        btn.disabled = false; btn.textContent = 'Erneut laden';
+        toast('Weiterhin keine Verbindung.', 'error');
+      }
+    });
   }
 
   // Frueher lokal gespeicherte Eintraege einmalig uebernehmen.
@@ -925,7 +968,6 @@
       btn.disabled = true; btn.textContent = 'Wird übernommen…';
       const ok = await persist(() => Store.importLegacy(list), 'Übernahme fehlgeschlagen.');
       if (!ok) { btn.disabled = false; btn.textContent = 'Übernehmen'; return; }
-      people = Store.people;
       closeSheet(); renderList();
       toast('Einträge übernommen.');
     });
@@ -946,7 +988,7 @@
     Store.onAuthChange(async (nextUser, event) => {
       if (event === 'PASSWORD_RECOVERY') { showPasswordReset(); return; }
       if (nextUser && appShell.classList.contains('hidden')) await enterApp();
-      else if (!nextUser) { people = []; showAuth(); }
+      else if (!nextUser) { showAuth(); }
     });
   })();
 

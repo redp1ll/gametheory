@@ -147,16 +147,19 @@ body {
   text-rendering: optimizeLegibility;
   overscroll-behavior: none;
 }
-/* Feste Hoehe statt Dokument-Scroll – so wandern Kopf- und Fussleiste beim
-   Ueberscrollen nicht mit. Die Hoehe bleibt stabil: Bei eingeblendeter
-   Tastatur schiebt das System die Ansicht selbst zurecht; ein zusaetzliches
-   Verkleinern durch uns hat sich damit ueberlagert und die Anordnung
-   zerlegt. */
+/* Der Rahmen deckt genau den sichtbaren Bereich ab und folgt ihm, wenn die
+   Tastatur erscheint. Das transform macht ihn zum Bezugspunkt aller fest
+   positionierten Elemente, sodass Kopfzeile, Suchfeld, Dialoge und Meldungen
+   gemeinsam an Ort und Stelle bleiben statt zu springen. */
+#vp {
+  position: fixed; left: 0; right: 0; top: 0; height: 100%;
+  transform: translateY(0);
+}
+@supports (height: 100dvh) { #vp { height: 100dvh; } }
 #appShell {
   height: 100%;
   display: flex; flex-direction: column; overflow: hidden;
 }
-@supports (height: 100dvh) { #appShell { height: 100dvh; } }
 button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
 button { background: none; border: none; cursor: pointer; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.022em; }

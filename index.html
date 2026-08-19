@@ -18,6 +18,7 @@
   <link rel="icon" href="icon-dark-192.png" media="(prefers-color-scheme: dark)" />
 </head>
 <body>
+  <div id="vp">
   <!-- Startzustand, bis die Sitzung geprüft ist -->
   <div id="bootView" class="boot">
     <span class="spinner" aria-label="Wird geladen"></span>
@@ -110,6 +111,7 @@
 
   <div id="modalRoot"></div>
   <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+  </div>
 
   <script src="vendor/supabase.js"></script>
   <script src="strategies.js"></script>
