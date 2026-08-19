@@ -225,6 +225,7 @@ svg { display: block; }
   flex-shrink: 0; z-index: 35;
   padding: 6px 16px calc(10px + var(--safe-b));
 }
+:root.kb-open .search-dock { padding-bottom: 8px; }
 .search-dock .search { max-width: 620px; margin: 0 auto; }
 .search {
   position: relative; display: flex; align-items: center; gap: 8px;
