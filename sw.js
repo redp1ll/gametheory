@@ -1,5 +1,5 @@
 /* Gambit — Service Worker: App-Shell cachen, damit die App offline läuft. */
-const CACHE = 'gambit-v16';
+const CACHE = 'gambit-v17';
 const ASSETS = [
   './',
   './index.html',

@@ -391,7 +391,7 @@ svg { display: block; }
 
 /* ---------- Spielverlauf ---------- */
 .mgrid {
-  --mg-num: 16px; --mg-row: 38px; --mg-col: 38px; --mg-gap: 4px;
+  --mg-num: 16px; --mg-row: 38px; --mg-col: 40px; --mg-gap: 4px;
   display: flex; align-items: stretch;
   background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1);
   padding: 14px 0 14px 14px; overflow: hidden;
@@ -445,10 +445,18 @@ svg { display: block; }
   font-size: 11px; font-weight: 500; color: var(--label-3); font-variant-numeric: tabular-nums;
 }
 .mg-cell { height: var(--mg-row); display: grid; place-items: center; position: relative; }
-.mdot { width: 22px; height: 22px; border-radius: 50%; display: block; }
+.mdot {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; color: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .2);
+}
+.mdot svg { width: 13px; height: 13px; }
+.mdot.me { width: 20px; height: 20px; opacity: .85; }
+.mdot.me svg { width: 11px; height: 11px; }
+.mdot.sm { width: 18px; height: 18px; }
+.mdot.sm svg { width: 10px; height: 10px; }
 .mdot.c { background: var(--ok); }
 .mdot.d { background: var(--no); }
-.mdot.me { width: 16px; height: 16px; opacity: .75; }
 .mg-note {
   position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
   width: 4px; height: 4px; border-radius: 50%; background: var(--label-3);
@@ -456,10 +464,8 @@ svg { display: block; }
 .mg-empty { padding: 26px 18px; text-align: center; font-size: 14px; color: var(--label-3); letter-spacing: -0.006em; }
 
 .legend { display: flex; align-items: center; gap: 14px; padding: 10px 6px 0; flex-wrap: wrap; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--label-2); }
-.legend i { width: 9px; height: 9px; border-radius: 50%; display: block; }
-.legend i.c { background: var(--ok); }
-.legend i.d { background: var(--no); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--label-2); }
+
 
 /* ---------- Statistiken ---------- */
 .stats { display: flex; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1); overflow: hidden; }
@@ -536,6 +542,12 @@ svg { display: block; }
 }
 .field textarea { resize: vertical; min-height: 76px; line-height: 1.45; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); background: var(--surface-2); }
+.field input[type="date"] {
+  -webkit-appearance: none; appearance: none;
+  height: 48px; padding-block: 0; line-height: 48px;
+}
+.field input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.field input[type="date"]::-webkit-calendar-picker-indicator { opacity: .5; }
 .field input.invalid { border-color: var(--no); }
 
 /* Segmented Control (iOS) */
