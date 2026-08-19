@@ -95,15 +95,19 @@
   const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
   /* ---------- Spielverlauf-Raster ---------- */
+  // Eigene Zuege einer Person: erfasste Abweichungen, sonst leer.
+  const ownMoves = (p) => p.rounds.map((r) => r.mine || null);
+
   function buildMatchGrid(p, flashId) {
     const opp = p.rounds.map((r) => r.opp);
     if (!opp.length) {
       return `<div class="card"><div class="mg-empty">Noch keine Runden. Halte oben die erste Interaktion fest.</div></div>`;
     }
-    const my = window.Gambit.replayMyMoves(p.strategy, opp);
+    const my = window.Gambit.replayMyMoves(p.strategy, opp, ownMoves(p));
     // Haken und Minus zusaetzlich zur Farbe: Die Bedeutung haengt damit nicht
     // allein an Rot und Gruen.
-    const mark = (m, klein) => `<span class="mdot${klein ? ' me' : ''} ${m === 'C' ? 'c' : 'd'}">`
+    const mark = (m, klein, eigen) => `<span class="mdot${klein ? ' me' : ''}${eigen ? ' own' : ''} ${m === 'C' ? 'c' : 'd'}"`
+      + (eigen ? ' title="Eigener Zug abweichend erfasst"' : '') + '>'
       + (m === 'C' ? ICON.check(klein ? 11 : 13) : ICON.minus(klein ? 11 : 13)) + '</span>';
     const cols = opp.map((m, i) => {
       const r = p.rounds[i];
@@ -112,7 +116,7 @@
       const flash = r.id === flashId ? ' flash' : '';
       return `<div class="mg-col tap${last}${flash}" data-round="${r.id}">
           <div class="mg-num">${i + 1}</div>
-          <div class="mg-cell">${mark(my[i], true)}</div>
+          <div class="mg-cell">${mark(my[i], true, !!r.mine)}</div>
           <div class="mg-cell">${mark(m)}${noted}</div>
         </div>`;
     }).join('');
@@ -129,7 +133,8 @@
         <span><span class="mdot sm c">${ICON.check(10)}</span>kooperiert</span>
         <span><span class="mdot sm d">${ICON.minus(10)}</span>nicht kooperiert</span>
       </div>
-      <div class="note">Tippe eine Spalte, um Datum, Thema und Details zu bearbeiten.</div>`;
+      <div class="note">Tippe eine Spalte, um sie zu bearbeiten.${p.rounds.some((r) => r.mine)
+        ? ' Umrandete Punkte in der Reihe „Ich" sind eigene Züge, die du abweichend erfasst hast.' : ''}</div>`;
   }
 
   /* ---------- Liste ---------- */
@@ -159,7 +164,7 @@
 
     for (const p of filtered) {
       const opp = p.rounds.map((r) => r.opp);
-      const rec = recommend(p.strategy, opp);
+      const rec = recommend(p.strategy, opp, ownMoves(p));
       const spark = opp.length
         ? opp.slice(-7).map((m) => `<i class="${m === 'C' ? 'c' : 'd'}"></i>`).join('')
         : '<i class="none"></i>';
@@ -234,7 +239,7 @@
     const p = byId(currentId);
     if (!p) return closeDetail();
     const opp = p.rounds.map((r) => r.opp);
-    const rec = recommend(p.strategy, opp);
+    const rec = recommend(p.strategy, opp, ownMoves(p));
     const coops = opp.filter((m) => m === 'C').length;
     const rate = opp.length ? Math.round((coops / opp.length) * 100) + '%' : '—';
     const streak = currentStreak(opp);
@@ -521,10 +526,21 @@
     if (!isNew && !round) return;
     const entwurf = {
       opp: isNew ? neuerZug : round.opp,
+      mine: isNew ? null : (round.mine || null),
       date: isNew ? Date.now() : round.date,
       topic: isNew ? '' : (round.topic || ''),
       details: isNew ? '' : (round.details || ''),
     };
+    // Was die Strategie fuer diese Runde geraten haette – als Beschriftung der
+    // Standardoption, damit „wie empfohlen" nicht abstrakt bleibt.
+    const bisher = p ? p.rounds.map((r) => r.opp) : [];
+    const index = isNew ? bisher.length : p.rounds.findIndex((r) => r.id === roundId);
+    const geraten = window.Gambit.replayMyMoves(
+      p.strategy,
+      bisher.slice(0, index).concat(entwurf.opp),
+      ownMoves(p).slice(0, index),
+    )[index];
+    const geratenText = geraten === 'C' ? 'kooperieren' : 'nicht kooperieren';
     const suggestions = distinctTopics().map((t) => `<option value="${esc(t)}"></option>`).join('');
     openSheet(`
       <h3>${isNew ? 'Interaktion festhalten' : 'Interaktion bearbeiten'}</h3>
@@ -537,6 +553,15 @@
           <button type="button" class="${entwurf.opp === 'C' ? 'on' : ''}" data-move="C"><i class="c"></i>War nett</button>
           <button type="button" class="${entwurf.opp === 'D' ? 'on' : ''}" data-move="D"><i class="d"></i>Nicht nett</button>
         </div>
+      </div>
+      <div class="field">
+        <label>Dein Zug <span class="opt">optional</span></label>
+        <div class="seg triple" id="mySeg">
+          <button type="button" class="${!entwurf.mine ? 'on' : ''}" data-mine="">Wie empfohlen</button>
+          <button type="button" class="${entwurf.mine === 'C' ? 'on' : ''}" data-mine="C"><i class="c"></i>Nett</button>
+          <button type="button" class="${entwurf.mine === 'D' ? 'on' : ''}" data-mine="D"><i class="d"></i>Nicht nett</button>
+        </div>
+        <p class="field-hint">Standard: Gambit nimmt an, dass du der Empfehlung gefolgt bist – hier wäre das <strong>${geratenText}</strong>. Hast du dich anders verhalten, halte es fest: Contrite und Pavlov beziehen deinen Zug in die nächste Empfehlung ein.</p>
       </div>
       <div class="field">
         <label>Datum</label>
@@ -561,9 +586,15 @@
         entwurf.opp = b.dataset.move;
         document.querySelectorAll('#reSeg button').forEach((x) => x.classList.toggle('on', x === b));
       }));
+    document.querySelectorAll('#mySeg button').forEach((b) =>
+      b.addEventListener('click', () => {
+        entwurf.mine = b.dataset.mine || null;
+        document.querySelectorAll('#mySeg button').forEach((x) => x.classList.toggle('on', x === b));
+      }));
     document.getElementById('reSave').addEventListener('click', async () => {
       const werte = {
         opp: entwurf.opp,
+        mine: entwurf.mine,
         topic: document.getElementById('reTopic').value.trim(),
         details: document.getElementById('reDetails').value.trim(),
         date: fromDateInput(document.getElementById('reDate').value) || entwurf.date,

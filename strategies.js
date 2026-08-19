@@ -3,15 +3,36 @@
  * ------------------------------------------------------------
  * Moves:  'C' = kooperieren (nett)   'D' = defektieren (nicht kooperieren)
  *
- * Eine Interaktion ("Runde") speichert nur den Zug des GEGENÜBERS (opp).
- * Meinen eigenen Zug pro Runde leiten wir per Replay aus der Strategie ab:
- * In Runde n habe ich das gespielt, was die Strategie aus den Runden 1..n-1
- * empfohlen hat. So sind Strategien wie Pavlov / Contrite (die meinen eigenen
- * letzten Zug brauchen) vollständig und konsistent rekonstruierbar.
+ * Eine Interaktion ("Runde") speichert den Zug des GEGENÜBERS (opp) und
+ * optional den eigenen Zug (mine). Ist mine leer, wird der eigene Zug per
+ * Replay aus der Strategie abgeleitet: In Runde n habe ich gespielt, was die
+ * Strategie aus den Runden 1..n-1 empfohlen hat.
+ *
+ * Ein abweichend erfasster eigener Zug wirkt sich auf alle folgenden Runden
+ * aus, weil Strategien wie Contrite und Pavlov den eigenen letzten Zug lesen:
+ * Contrite unterscheidet damit, ob eine Nichtkooperation des anderen eine
+ * berechtigte Antwort auf mein eigenes Verhalten war oder ein grundloser
+ * Angriff. Ohne diese Angabe fiele die Empfehlung nach einer Abweichung
+ * falsch aus.
  */
 
 (function (global) {
   'use strict';
+
+  // Ansehen („standing"): Wer gegenüber einem fairen Gegenüber nicht
+  // kooperiert, verliert sein Ansehen und stellt es durch Kooperation wieder
+  // her. Eine Nichtkooperation gegen jemanden in schlechtem Ansehen ist eine
+  // berechtigte Reaktion und kostet kein Ansehen. Damit erkennt Contrite auch
+  // Reaktionen, die erst eine Runde später kommen.
+  function standing(oppMoves, myMoves) {
+    let ich = true, anderer = true;
+    for (let i = 0; i < oppMoves.length; i++) {
+      const ichWarGut = ich, andererWarGut = anderer;
+      if (myMoves[i] === 'D') { if (andererWarGut) ich = false; } else ich = true;
+      if (oppMoves[i] === 'D') { if (ichWarGut) anderer = false; } else anderer = true;
+    }
+    return { ich, anderer };
+  }
 
   // Jede Strategie: decide(ctx) -> 'C' | 'D'
   // ctx = { oppMoves: [...], myMoves: [...] }  (beide gleich lang, Historie VOR dieser Runde)
@@ -66,23 +87,18 @@
       blurb:
         'Wie Tit for Tat, aber es unterscheidet: Hat der andere dich zu RECHT bestraft (weil du selbst zuletzt nicht kooperiert hast), verzeihst du. Hat er dich GRUNDLOS angegriffen, reagierst du. Verhindert Rache-Schleifen.',
       decide(ctx) {
-        const o = ctx.oppMoves, m = ctx.myMoves;
-        if (o.length === 0) return 'C';
-        const lastOpp = o[o.length - 1];
-        if (lastOpp === 'C') return 'C';
-        // Gegner hat defektiert: war es eine gerechtfertigte Reaktion auf meinen Fehler?
-        const myPrev = m.length ? m[m.length - 1] : 'C';
-        if (myPrev === 'D') return 'C'; // gerechtfertigte Strafe -> ich mache es wieder gut
-        return 'D'; // grundloser Angriff -> Vergeltung
+        if (ctx.oppMoves.length === 0) return 'C';
+        // Nur gegen jemanden in schlechtem Ansehen wird nicht kooperiert.
+        return standing(ctx.oppMoves, ctx.myMoves).anderer ? 'C' : 'D';
       },
-      reason(ctx, move) {
-        const o = ctx.oppMoves, m = ctx.myMoves;
+      reason(ctx) {
+        const o = ctx.oppMoves;
         if (o.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
-        const lastOpp = o[o.length - 1];
-        if (lastOpp === 'C') return 'Der andere hat kooperiert – koopiere zurück.';
-        const myPrev = m.length ? m[m.length - 1] : 'C';
-        if (myPrev === 'D') return 'Er hat nicht kooperiert – aber das war eine Reaktion auf DEINEN letzten Zug. Mach es wieder gut und kooperiere.';
-        return 'Er hat grundlos nicht kooperiert (obwohl du zuletzt fair warst) – zieh dich diesmal zurück.';
+        const st = standing(o, ctx.myMoves);
+        if (!st.anderer) return 'Er hat grundlos nicht kooperiert, obwohl du fair warst – zieh dich diesmal zurück.';
+        if (o[o.length - 1] === 'D') return 'Seine Nichtkooperation war eine berechtigte Reaktion auf dein eigenes Verhalten – mach es wieder gut und kooperiere.';
+        if (!st.ich) return 'Du bist zuletzt selbst abgewichen – stell das mit Kooperation wieder her.';
+        return 'Der andere hat kooperiert – koopiere zurück.';
       },
     },
 
@@ -130,21 +146,23 @@
 
   const DEFAULT_STRATEGY = 'contrite_tft';
 
-  // Meine Züge per Replay rekonstruieren (myMove[n] = Empfehlung aus 0..n-1).
-  function replayMyMoves(strategyId, oppMoves) {
+  // Meine Züge rekonstruieren. ownMoves[i] überschreibt die Ableitung, wenn
+  // für diese Runde ein eigener Zug erfasst wurde.
+  function replayMyMoves(strategyId, oppMoves, ownMoves) {
     const strat = STRATEGIES[strategyId] || STRATEGIES[DEFAULT_STRATEGY];
+    const eigen = ownMoves || [];
     const my = [];
     for (let i = 0; i < oppMoves.length; i++) {
       const ctx = { oppMoves: oppMoves.slice(0, i), myMoves: my.slice(0, i) };
-      my.push(strat.decide(ctx));
+      my.push(eigen[i] === 'C' || eigen[i] === 'D' ? eigen[i] : strat.decide(ctx));
     }
     return my;
   }
 
   // Empfehlung für den NÄCHSTEN Zug + Begründung.
-  function recommend(strategyId, oppMoves) {
+  function recommend(strategyId, oppMoves, ownMoves) {
     const strat = STRATEGIES[strategyId] || STRATEGIES[DEFAULT_STRATEGY];
-    const myMoves = replayMyMoves(strategyId, oppMoves);
+    const myMoves = replayMyMoves(strategyId, oppMoves, ownMoves);
     const ctx = { oppMoves: oppMoves.slice(), myMoves };
     const move = strat.decide(ctx);
     const reason = strat.reason(ctx, move);
