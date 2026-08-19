@@ -147,7 +147,9 @@
       .update({ name: patch.name, context: patch.context, strategy: patch.strategy })
       .eq('id', id);
     if (error) throw error;
-    Object.assign(state.people.find((p) => p.id === id) || {}, patch);
+    const person = state.people.find((p) => p.id === id);
+    if (!person) throw new Error('Datenbestand nicht aktuell – bitte neu laden.');
+    Object.assign(person, patch);
     cache();
   }
   async function deletePerson(id) {
@@ -165,11 +167,13 @@
       .select().single();
     if (error) throw error;
     const person = state.people.find((p) => p.id === personId);
+    if (!person) throw new Error('Datenbestand nicht aktuell – bitte neu laden.');
     const round = {
       id: data.id, opp: data.opp, date: dateToMs(data.occurred_on), seq: data.created_at,
       topic: data.topic, details: data.details,
     };
-    if (person) { person.rounds.push(round); sortRounds(person); }
+    person.rounds.push(round);
+    sortRounds(person);
     cache();
     return round;
   }
