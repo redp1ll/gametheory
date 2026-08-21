@@ -339,12 +339,17 @@ svg { display: block; }
 
 /* Personen-Card: Identitaet und Strategie an einem Ort */
 .p-card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1); overflow: hidden; }
-.p-card-top { text-align: center; padding: 24px 20px 20px; }
-.p-card-top .avatar { width: 72px; height: 72px; font-size: 27px; font-weight: 600; margin: 0 auto 12px; box-shadow: var(--shadow-2); }
-.p-card-top h2 { font-size: 24px; letter-spacing: -0.026em; }
+/* Eine gemeinsame linke Kante fuer Name, Kontext und Strategie: ohne
+   Bildmarke traegt die Ausrichtung die Ordnung, nicht mehr die Mitte. */
+.p-card-top { padding: 18px 20px 15px; }
+.p-card-top h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.032em; line-height: 1.14; }
 .p-card-top .p-sub { font-size: 15px; margin-top: 3px; white-space: normal; }
-.p-card .row { border-top: .5px solid var(--separator); }
-.row-cap { display: block; font-size: 12px; color: var(--label-2); letter-spacing: -0.004em; margin-bottom: 1px; }
+.p-card .row { padding: 12px 16px 13px 20px; border-top: .5px solid var(--separator); }
+.p-card .row-title { font-weight: 500; }
+.row-cap {
+  display: block; font-size: 12px; font-weight: 500; color: var(--label-2);
+  letter-spacing: -0.004em; margin-bottom: 2px;
+}
 
 /* Abschnitte */
 .section { margin-bottom: 26px; }

@@ -268,7 +268,6 @@
         <div class="section">
           <div class="p-card">
             <div class="p-card-top">
-              <div class="avatar" style="background:${avatarColor(p.name)}">${esc(initials(p.name))}</div>
               <h2>${esc(p.name)}</h2>
               ${p.context ? `<div class="p-sub">${esc(p.context)}</div>` : ''}
             </div>
