@@ -261,16 +261,19 @@
     detailView.innerHTML = `
       <div class="detail-nav">
         <button class="nav-back glass" id="backBtn" aria-label="Zurück">${ICON.back()}</button>
-        <button class="nav-back glass" id="moreBtn" aria-label="Menü">${ICON.dots()}</button>
+        <button class="nav-back glass" id="deleteBtn" aria-label="Person löschen">${ICON.trash(19)}</button>
       </div>
 
       <div class="wrap">
         <div class="section">
           <div class="p-card">
-            <div class="p-card-top">
-              <h2>${esc(p.name)}</h2>
-              ${p.context ? `<div class="p-sub">${esc(p.context)}</div>` : ''}
-            </div>
+            <button class="p-card-top" id="identRow" aria-label="Name und Kontext bearbeiten">
+              <span class="p-card-id">
+                <span class="p-title">${esc(p.name)}</span>
+                ${p.context ? `<span class="p-sub">${esc(p.context)}</span>` : ''}
+              </span>
+              <span class="chev">${ICON.chevron()}</span>
+            </button>
             <button class="row" id="stratRow">
               <span class="row-main">
                 <span class="row-cap">Strategie</span>
@@ -330,7 +333,8 @@
       </div>`;
 
     detailView.querySelector('#backBtn').addEventListener('click', () => history.back());
-    detailView.querySelector('#moreBtn').addEventListener('click', () => openPersonMenu(p));
+    detailView.querySelector('#deleteBtn').addEventListener('click', () => confirmDeletePerson(p.id));
+    detailView.querySelector('#identRow').addEventListener('click', () => openPersonSheet(p));
     detailView.querySelector('#stratRow').addEventListener('click', () => openStrategyPicker(p));
     detailView.querySelectorAll('[data-log]').forEach((b) =>
       b.addEventListener('click', () => logInteraction(p.id, b.dataset.log)));
@@ -626,19 +630,6 @@
   }
 
   /* Personen-Menü (⋯ in der Detailansicht) */
-  function openPersonMenu(p) {
-    openSheet(`
-      <h3>${esc(p.name)}</h3>
-      <p class="sub">${p.rounds.length} ${p.rounds.length === 1 ? 'Interaktion' : 'Interaktionen'} festgehalten.</p>
-      <div class="rows">
-        <button class="row" id="mEdit"><span class="row-main"><span class="row-title">Bearbeiten</span></span><span class="chev">${ICON.chevron()}</span></button>
-        <button class="row destructive" id="mDel"><span class="row-main"><span class="row-title">Person löschen</span></span></button>
-      </div>
-      <div class="actions"><button class="btn ghost wide" data-close>Abbrechen</button></div>`);
-    document.getElementById('mEdit').addEventListener('click', () => openPersonSheet(p));
-    document.getElementById('mDel').addEventListener('click', () => confirmDeletePerson(p.id));
-  }
-
   function confirmDeletePerson(id) {
     const p = byId(id);
     openSheet(`
