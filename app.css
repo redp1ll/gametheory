@@ -341,9 +341,22 @@ svg { display: block; }
 .p-card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1); overflow: hidden; }
 /* Eine gemeinsame linke Kante fuer Name, Kontext und Strategie: ohne
    Bildmarke traegt die Ausrichtung die Ordnung, nicht mehr die Mitte. */
-.p-card-top { padding: 18px 20px 15px; }
-.p-card-top h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.032em; line-height: 1.14; }
-.p-card-top .p-sub { font-size: 15px; margin-top: 3px; white-space: normal; }
+.p-card-top {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 18px 16px 15px 20px; text-align: left; cursor: pointer;
+  transition: background .15s var(--ease);
+}
+.p-card-top:active { background: var(--fill-4); }
+@media (hover: hover) { .p-card-top:hover { background: var(--fill-4); } }
+.p-card-id { flex: 1; min-width: 0; }
+.p-title { display: block; font-size: 28px; font-weight: 700; letter-spacing: -0.032em; line-height: 1.14; }
+/* Lange Kontexte duerfen die Card nicht dominieren; vollstaendig steht der
+   Text im Bearbeiten-Fenster, das diese Zeile oeffnet. */
+.p-card-top .p-sub {
+  font-size: 15px; margin-top: 3px; white-space: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
 .p-card .row { padding: 12px 16px 13px 20px; border-top: .5px solid var(--separator); }
 .p-card .row-title { font-weight: 500; }
 .row-cap {
