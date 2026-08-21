@@ -45,6 +45,7 @@
   // hier waere bei einem fehlgeschlagenen Laden stillschweigend veraltet –
   // Schreibvorgaenge landeten dann in der Datenbank, aber nie in der Anzeige.
   let currentId = null;
+  let verlaufOffen = false; // Verlauf zeigt eingeklappt nur den neuesten Eintrag
   const people = () => Store.people;
   function byId(id) { return Store.people.find((p) => p.id === id); }
 
@@ -222,6 +223,7 @@
   const detailView = document.getElementById('detailView');
 
   function openDetail(id) {
+    verlaufOffen = false;
     currentId = id;
     renderDetail();
     detailView.classList.remove('hidden');
@@ -263,10 +265,22 @@
       </div>
 
       <div class="wrap">
-        <div class="hero">
-          <div class="avatar" style="background:${avatarColor(p.name)}">${esc(initials(p.name))}</div>
-          <h2>${esc(p.name)}</h2>
-          ${p.context ? `<div class="p-sub">${esc(p.context)}</div>` : ''}
+        <div class="section">
+          <div class="p-card">
+            <div class="p-card-top">
+              <div class="avatar" style="background:${avatarColor(p.name)}">${esc(initials(p.name))}</div>
+              <h2>${esc(p.name)}</h2>
+              ${p.context ? `<div class="p-sub">${esc(p.context)}</div>` : ''}
+            </div>
+            <button class="row" id="stratRow">
+              <span class="row-main">
+                <span class="row-cap">Strategie</span>
+                <span class="row-title">${esc(STRATEGIES[p.strategy].name)}</span>
+                <span class="row-sub">${esc(STRATEGIES[p.strategy].tagline)}</span>
+              </span>
+              <span class="chev">${ICON.chevron()}</span>
+            </button>
+          </div>
         </div>
 
         <div class="section">
@@ -277,7 +291,6 @@
               <strong>${rec.move === 'C' ? 'Kooperieren' : 'Nicht kooperieren'}</strong>
             </div>
             <div class="rec-reason">${esc(rec.reason)}</div>
-            <div class="rec-strategy">${esc(rec.strategy.name)}</div>
           </div>
         </div>
 
@@ -309,21 +322,11 @@
         </div>
 
         <div class="section">
-          <div class="section-hd">Strategie</div>
-          <div class="rows">
-            <button class="row" id="stratRow">
-              <span class="row-main">
-                <span class="row-title">${esc(STRATEGIES[p.strategy].name)}</span>
-                <span class="row-sub">${esc(STRATEGIES[p.strategy].tagline)}</span>
-              </span>
-              <span class="chev">${ICON.chevron()}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="section">
           <div class="section-hd">Verlauf</div>
-          <div class="rows">${timeline}</div>
+          <div class="rows${p.rounds.length > 1 && !verlaufOffen ? ' zu' : ''}" id="verlaufRows">${timeline}</div>
+          ${p.rounds.length > 1 ? `<button class="more-row" id="verlaufToggle" aria-expanded="${verlaufOffen}">
+            ${verlaufOffen ? 'Weniger anzeigen' : 'Mehr anzeigen'}
+          </button>` : ''}
         </div>
       </div>`;
 
@@ -334,6 +337,13 @@
       b.addEventListener('click', () => logInteraction(p.id, b.dataset.log)));
     detailView.querySelectorAll('[data-round]').forEach((c) =>
       c.addEventListener('click', () => openRoundSheet(p.id, c.dataset.round)));
+    const toggle = detailView.querySelector('#verlaufToggle');
+    if (toggle) toggle.addEventListener('click', () => {
+      verlaufOffen = !verlaufOffen;
+      detailView.querySelector('#verlaufRows').classList.toggle('zu', !verlaufOffen);
+      toggle.textContent = verlaufOffen ? 'Weniger anzeigen' : 'Mehr anzeigen';
+      toggle.setAttribute('aria-expanded', String(verlaufOffen));
+    });
 
     requestAnimationFrame(() => {
       const sc = detailView.querySelector('#matchScroll');
@@ -412,7 +422,7 @@
     };
     openSheet(`
       <h3>${isEdit ? 'Person bearbeiten' : 'Neue Person'}</h3>
-      <p class="sub">${isEdit ? 'Name, Kontext und Strategie anpassen.' : 'Mit wem willst du deine Züge im Blick behalten?'}</p>
+      <p class="sub">${isEdit ? 'Name und Kontext anpassen.' : 'Mit wem willst du deine Züge im Blick behalten?'}</p>
       <div class="field">
         <label>Name</label>
         <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${esc(state.name)}" enterkeyhint="done" />
@@ -421,15 +431,16 @@
         <label>Kontext <span class="opt">optional</span></label>
         <input id="pContext" type="text" placeholder="z. B. Nachbar · Parkplatz" value="${esc(state.context)}" />
       </div>
-      <div class="field">
+      ${isEdit ? '' : `<div class="field">
         <label>Strategie</label>
         <div class="rows">
           <button class="row" id="pStratRow">
-            <span class="row-main"><span class="row-title" id="pStratName">${esc(STRATEGIES[state.strategy].name)}</span>\n            <span class="row-sub">${esc(STRATEGIES[state.strategy].tagline)}</span></span>
+            <span class="row-main"><span class="row-title">${esc(STRATEGIES[state.strategy].name)}</span>
+            <span class="row-sub">${esc(STRATEGIES[state.strategy].tagline)}</span></span>
             <span class="chev">${ICON.chevron()}</span>
           </button>
         </div>
-      </div>
+      </div>`}
       <div class="actions">
         <button class="btn ghost" data-close>Abbrechen</button>
         <button class="btn primary" id="savePerson">${isEdit ? 'Sichern' : 'Anlegen'}</button>
@@ -442,7 +453,8 @@
       context: document.getElementById('pContext').value,
       strategy: state.strategy,
     });
-    document.getElementById('pStratRow').addEventListener('click', () => {
+    const stratRow = document.getElementById('pStratRow');
+    if (stratRow) stratRow.addEventListener('click', () => {
       const current = readDraft();
       pickStrategy(
         state.strategy,

@@ -337,11 +337,14 @@ svg { display: block; }
 .nav-capsule .icon-btn { width: 34px; height: 34px; color: var(--label); }
 .nav-capsule .icon-btn:active { transform: scale(.88); }
 
-/* Hero */
-.hero { text-align: center; padding: 6px 20px 22px; }
-.hero .avatar { width: 76px; height: 76px; font-size: 28px; font-weight: 600; margin: 0 auto 12px; box-shadow: var(--shadow-2); }
-.hero h2 { font-size: 26px; letter-spacing: -0.026em; }
-.hero .p-sub { font-size: 15px; margin-top: 3px; white-space: normal; }
+/* Personen-Card: Identitaet und Strategie an einem Ort */
+.p-card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1); overflow: hidden; }
+.p-card-top { text-align: center; padding: 24px 20px 20px; }
+.p-card-top .avatar { width: 72px; height: 72px; font-size: 27px; font-weight: 600; margin: 0 auto 12px; box-shadow: var(--shadow-2); }
+.p-card-top h2 { font-size: 24px; letter-spacing: -0.026em; }
+.p-card-top .p-sub { font-size: 15px; margin-top: 3px; white-space: normal; }
+.p-card .row { border-top: .5px solid var(--separator); }
+.row-cap { display: block; font-size: 12px; color: var(--label-2); letter-spacing: -0.004em; margin-bottom: 1px; }
 
 /* Abschnitte */
 .section { margin-bottom: 26px; }
@@ -368,7 +371,6 @@ svg { display: block; }
 :root[data-theme="dark"] .rec-card.c strong { color: var(--ok); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rec-card.c strong { color: var(--ok); } }
 .rec-reason { font-size: 15px; color: var(--label-2); letter-spacing: -0.012em; line-height: 1.45; }
-.rec-strategy { margin-top: 12px; font-size: 12px; color: var(--label-3); }
 
 /* Log-Buttons */
 .log-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -585,6 +587,17 @@ svg { display: block; }
 .btn.wide { flex: 1 1 100%; }
 
 /* Verlauf-Zeilen */
+/* Verlauf eingeklappt: nur der neueste Eintrag */
+.rows.zu .row:not(:first-child) { display: none; }
+.more-row {
+  display: block; width: 100%; margin-top: 8px; padding: 13px 14px;
+  background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1);
+  text-align: center; font-size: 16px; letter-spacing: -0.011em; color: var(--accent);
+  cursor: pointer; transition: background .15s var(--ease);
+}
+.more-row:active { background: var(--fill-4); }
+@media (hover: hover) { .more-row:hover { background: var(--fill-4); } }
+
 .tl-empty { padding: 26px 18px; text-align: center; font-size: 14px; color: var(--label-3); }
 
 /* ---------- Start / Anmeldung ---------- */
