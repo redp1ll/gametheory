@@ -16,6 +16,16 @@
   const CACHE_KEY = 'gambit.cache.v1';
   const LEGACY_KEY = 'gambit.people.v1';
 
+  /* Der Link zum Zuruecksetzen traegt "type=recovery" im Adress-Fragment.
+     Der Client liest die Adresse beim Start aus und entfernt sie danach,
+     deshalb wird die Kennung vorher gemerkt: Sonst ist sie weg, bevor die
+     Oberflaeche entscheiden kann, ob sie die Anmeldung oder das Setzen
+     eines neuen Passworts zeigt. */
+  const RECOVERY = /(?:^|[#&?])type=recovery(?:&|$)/;
+  let imRecovery = RECOVERY.test(global.location.hash) || RECOVERY.test(global.location.search);
+  function isRecovery() { return imRecovery; }
+  function clearRecovery() { imRecovery = false; }
+
   const client = global.supabase.createClient(CONFIG.url, CONFIG.key, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
@@ -244,7 +254,7 @@
   global.GambitStore = {
     client, state,
     currentUser, onAuthChange, signInWithPassword, signUp,
-    requestPasswordReset, updatePassword, signOut,
+    requestPasswordReset, updatePassword, signOut, isRecovery, clearRecovery,
     loadAll,
     addPerson, updatePerson, deletePerson,
     addRound, updateRound, deleteRound,

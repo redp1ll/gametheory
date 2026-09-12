@@ -969,6 +969,7 @@
     try {
       await Store.updatePassword(field.value);
       field.value = '';
+      Store.clearRecovery();
       newPasswordForm.classList.add('hidden');
       authForm.classList.remove('hidden');
       authLinks.classList.remove('hidden');
@@ -1049,19 +1050,26 @@
   }
 
   (async function start() {
+    // Zuerst zuhoeren, dann laden: PASSWORD_RECOVERY wird einmalig beim
+    // Auslesen der Adresse gemeldet und ginge sonst verloren.
+    Store.onAuthChange(async (nextUser, event) => {
+      if (event === 'PASSWORD_RECOVERY') { showPasswordReset(); return; }
+      if (Store.isRecovery()) return; // Erst das neue Passwort, dann die App.
+      if (nextUser && appShell.classList.contains('hidden')) await enterApp();
+      else if (!nextUser) { showAuth(); }
+    });
+
     let user = null;
     try {
       user = await Store.currentUser();
     } catch (err) {
       console.error(err);
     }
+    // Der Link legt bereits eine Sitzung an. Ohne diese Abfrage landete man
+    // angemeldet in der App und bekam nie die Gelegenheit, ein neues
+    // Passwort zu setzen.
+    if (Store.isRecovery()) { showPasswordReset(); return; }
     if (user) await enterApp(); else showAuth();
-
-    Store.onAuthChange(async (nextUser, event) => {
-      if (event === 'PASSWORD_RECOVERY') { showPasswordReset(); return; }
-      if (nextUser && appShell.classList.contains('hidden')) await enterApp();
-      else if (!nextUser) { showAuth(); }
-    });
   })();
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
