@@ -289,32 +289,26 @@ svg { display: block; }
 .chev { color: var(--label-3); flex-shrink: 0; }
 
 /* ---------- Leerzustand ---------- */
-.empty { position: relative; text-align: center; padding: 150px 28px 72px; }
+.empty { position: relative; text-align: center; padding: 72px 28px; }
 .empty-glyph { color: var(--label-3); margin: 0 auto 16px; width: 44px; height: 44px; }
 .empty h2 { font-size: 20px; letter-spacing: -0.022em; margin-bottom: 6px; }
 .empty p { font-size: 15px; color: var(--label-2); max-width: 320px; margin: 0 auto; letter-spacing: -0.012em; }
 
-/* Weist auf den Hinzufuegen-Knopf in der Kopfzeile. Dessen Mitte liegt 75px
-   vom Fensterrand (16px Innenabstand + 34px Menue + 8px Luecke + halbe
-   Knopfbreite). Gemessen vom Rand der Liste, die selbst 16px Innenabstand
-   hat, sind das 59px; die Spitze sitzt 18.5px vom rechten Rand der Grafik,
-   bleibt also 40.5px. Kopf und Liste teilen sich Breite und Innenabstand,
-   deshalb stimmt das auf jeder Fensterbreite. */
-.empty-hint { position: absolute; top: 6px; right: 40.5px; width: 232px; height: 96px; pointer-events: none; }
-.empty-arrow { position: absolute; top: 0; right: 0; width: 140px; height: 78px; color: var(--label-3); }
-.empty-hint-label {
-  position: absolute; left: 0; top: 54px; white-space: nowrap;
-  font-size: 15px; font-weight: 500; color: var(--label-2); letter-spacing: -0.012em;
+/* Weist vom Personen-Symbol hinauf zum Hinzufuegen-Knopf.
+   Rechts: Die Knopfmitte liegt 75px vom Fensterrand (16px Innenabstand +
+   34px Menue + 8px Luecke + halbe Knopfbreite); die Liste hat selbst 16px
+   Innenabstand, bleiben 59px. Links: 50% + 30px, also 8px neben dem 44px
+   breiten, mittigen Symbol. Unten endet der Bogen auf dessen Mitte
+   (72px Innenabstand + 22px halbe Hoehe). Damit stimmt es auf jeder Breite.
+   Der Bogen wird waagerecht gedehnt; weil er senkrecht ausläuft, bleibt die
+   Spitze korrekt, und non-scaling-stroke haelt die Linienstaerke gleich. */
+.empty-hint {
+  position: absolute; top: 8px; height: 86px;
+  left: calc(50% + 30px); right: 59px;
+  color: var(--label-3); pointer-events: none;
 }
-
-/* Solange niemand angelegt ist, atmet der Knopf leicht. */
-:root.leer .add-btn { animation: addPuls 2.6s var(--ease) infinite; }
-@keyframes addPuls {
-  0%, 62%, 100% { transform: scale(1); }
-  72% { transform: scale(1.12); }
-  82% { transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) { :root.leer .add-btn { animation: none; } }
+.empty-curve { width: 100%; height: 100%; display: block; }
+.empty-tip { position: absolute; top: 2px; right: -10px; width: 20px; height: 16px; }
 
 /* ---------- Detailansicht ---------- */
 .detail {
