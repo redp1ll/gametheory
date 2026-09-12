@@ -323,7 +323,7 @@
         </div>
 
         <div class="section">
-          <div class="section-hd">Verlauf</div>
+          <div class="section-hd">Details</div>
           <div class="rows${p.rounds.length > 1 && !verlaufOffen ? ' zu' : ''}" id="verlaufRows">${timeline}</div>
           ${p.rounds.length > 1 ? `<button class="more-row" id="verlaufToggle" aria-expanded="${verlaufOffen}">
             ${verlaufOffen ? 'Weniger anzeigen' : 'Mehr anzeigen'}
