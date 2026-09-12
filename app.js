@@ -112,13 +112,12 @@
       + (m === 'C' ? ICON.check(klein ? 11 : 13) : ICON.minus(klein ? 11 : 13)) + '</span>';
     const cols = opp.map((m, i) => {
       const r = p.rounds[i];
-      const noted = (r.topic || r.details) ? '<span class="mg-note"></span>' : '';
       const last = i === opp.length - 1 ? ' last' : '';
       const flash = r.id === flashId ? ' flash' : '';
       return `<div class="mg-col tap${last}${flash}" data-round="${r.id}">
           <div class="mg-num">${i + 1}</div>
           <div class="mg-cell">${mark(my[i], true, !!r.mine)}</div>
-          <div class="mg-cell">${mark(m)}${noted}</div>
+          <div class="mg-cell">${mark(m)}</div>
         </div>`;
     }).join('');
     return `
