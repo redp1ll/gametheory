@@ -133,8 +133,8 @@
         <span><span class="mdot sm c">${ICON.check(10)}</span>kooperiert</span>
         <span><span class="mdot sm d">${ICON.minus(10)}</span>nicht kooperiert</span>
       </div>
-      <div class="note">Tippe eine Spalte zum Bearbeiten.${p.rounds.some((r) => r.mine)
-        ? ' Umrandete Punkte sind eigene Züge, die du abweichend erfasst hast.' : ''}</div>`;
+      ${p.rounds.some((r) => r.mine)
+        ? '<div class="note">Umrandete Punkte sind eigene Züge, die du abweichend erfasst hast.</div>' : ''}`;
   }
 
   /* ---------- Liste ---------- */

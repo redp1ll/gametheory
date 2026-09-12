@@ -133,6 +133,11 @@
 
 /* ---------- Basis ---------- */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* Keine sichtbaren Rollbalken: Auf dem Telefon sind sie ueberfluessig, und
+   in den scrollbaren Bereichen ueberlagern sie den Inhalt. Gerollt wird
+   weiterhin, nur die Anzeige entfaellt. */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
 html, body { touch-action: manipulation; height: 100%; overflow: hidden; overscroll-behavior: none; }
 html { -webkit-text-size-adjust: 100%; }
 body {
