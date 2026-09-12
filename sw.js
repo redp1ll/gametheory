@@ -1,5 +1,5 @@
 /* Gambit — Service Worker: App-Shell cachen, damit die App offline läuft. */
-const CACHE = 'gambit-v23';
+const CACHE = 'gambit-v24';
 const ASSETS = [
   './',
   './index.html',
@@ -26,12 +26,24 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Cache-first für die App-Dateien, Netz als Fallback (und Cache-Auffrischung).
+/* App-Dateien: erst das Netz, Cache als Rueckfall.
+ *
+ * Zuvor galt Cache-first. Damit lieferte ein Start nach einer Aktualisierung
+ * noch die alten Dateien aus und erst der naechste den neuen Stand - in der
+ * Praxis mischten sich dabei neues HTML und altes CSS, was die Oberflaeche
+ * zerlegte. Jetzt entscheidet die Verbindung: online immer der aktuelle
+ * Stand, offline weiterhin der zuletzt gesicherte. */
+const APP_DATEI = /\.(?:html|css|js|webmanifest)$/;
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const fromNet = fetch(e.request)
+  const url = new URL(e.request.url);
+  const istAppDatei = e.request.mode === 'navigate'
+    || (url.origin === self.location.origin && APP_DATEI.test(url.pathname));
+
+  if (istAppDatei) {
+    e.respondWith(
+      fetch(e.request)
         .then((res) => {
           if (res && res.status === 200 && res.type === 'basic') {
             const copy = res.clone();
@@ -39,8 +51,19 @@ self.addEventListener('fetch', (e) => {
           }
           return res;
         })
-        .catch(() => cached);
-      return cached || fromNet;
-    })
+        .catch(() => caches.match(e.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Bilder und Schriften aendern sich kaum: erst Cache, dann Netz.
+  e.respondWith(
+    caches.match(e.request).then((cached) => cached || fetch(e.request).then((res) => {
+      if (res && res.status === 200 && res.type === 'basic') {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy));
+      }
+      return res;
+    }))
   );
 });
