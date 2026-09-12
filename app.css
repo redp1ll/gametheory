@@ -502,10 +502,6 @@ svg { display: block; }
 .mdot.sm svg { width: 10px; height: 10px; }
 .mdot.c { background: var(--ok); }
 .mdot.d { background: var(--no); }
-.mg-note {
-  position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
-  width: 4px; height: 4px; border-radius: 50%; background: var(--label-3);
-}
 .mg-empty { padding: 26px 18px; text-align: center; font-size: 14px; color: var(--label-3); letter-spacing: -0.006em; }
 
 .legend { display: flex; align-items: center; gap: 14px; padding: 10px 6px 0; flex-wrap: wrap; }
