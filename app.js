@@ -154,6 +154,7 @@
     peopleList.innerHTML = '';
     const noneAtAll = people().length === 0;
     emptyState.classList.toggle('hidden', !noneAtAll);
+    document.documentElement.classList.toggle('leer', noneAtAll);
     peopleList.classList.toggle('hidden', noneAtAll || filtered.length === 0);
     if (noneAtAll) return;
 
