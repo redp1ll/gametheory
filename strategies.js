@@ -42,7 +42,7 @@
       name: 'Großzügiges Tit for Tat',
       tagline: 'Verzeiht einen einzelnen Ausrutscher',
       blurb:
-        'Startet freundlich, spiegelt das Verhalten des anderen – verzeiht aber einen einmaligen Ausrutscher. Erst bei ZWEI Fehltritten hintereinander wird nicht mehr kooperiert. Robust gegen Missverständnisse.',
+        'Spiegelt das Verhalten des anderen, verzeiht aber einen einmaligen Ausrutscher. Erst zwei Fehltritte in Folge beenden die Kooperation. Robust gegen Missverständnisse.',
       decide(ctx) {
         const o = ctx.oppMoves;
         if (o.length === 0) return 'C';
@@ -53,19 +53,19 @@
       },
       reason(ctx, move) {
         const o = ctx.oppMoves;
-        if (o.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
-        if (move === 'D') return 'Zwei Mal in Folge nicht kooperiert – das ist kein Ausrutscher mehr. Zieh dich diesmal zurück.';
-        if (o[o.length - 1] === 'D') return 'Einmaliger Ausrutscher – verzeih ihn und koopiere weiter, um die Beziehung nicht zu zerstören.';
-        return 'Zuletzt war die Zusammenarbeit gut – halte den Kurs und kooperiere.';
+        if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
+        if (move === 'D') return 'Zwei Mal in Folge nicht kooperiert. Kein Ausrutscher mehr, zieh dich zurück.';
+        if (o[o.length - 1] === 'D') return 'Einmaliger Ausrutscher. Verzeih ihn und kooperiere weiter.';
+        return 'Zuletzt lief es gut. Halte den Kurs.';
       },
     },
 
     tft: {
       id: 'tft',
       name: 'Tit for Tat',
-      tagline: 'Streng · spiegelt jeden letzten Zug',
+      tagline: 'Streng, spiegelt den letzten Zug',
       blurb:
-        'Der Klassiker (Axelrod). Fängt freundlich an und macht danach exakt das, was der andere zuletzt getan hat. Fair und klar – aber unversöhnlich bei einem einzelnen Fehler.',
+        'Der Klassiker von Axelrod. Macht genau das, was der andere zuletzt getan hat. Fair und klar, aber unversöhnlich bei einem einzelnen Fehler.',
       decide(ctx) {
         const o = ctx.oppMoves;
         if (o.length === 0) return 'C';
@@ -73,19 +73,19 @@
       },
       reason(ctx, move) {
         const o = ctx.oppMoves;
-        if (o.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
+        if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         return move === 'C'
-          ? 'Der andere hat zuletzt kooperiert – spiegle das und kooperiere ebenfalls.'
-          : 'Der andere hat zuletzt nicht kooperiert – spiegle das und kooperiere diesmal nicht.';
+          ? 'Der andere hat kooperiert. Spiegle das.'
+          : 'Der andere hat nicht kooperiert. Spiegle das.';
       },
     },
 
     contrite_tft: {
       id: 'contrite_tft',
       name: 'Contrite Tit for Tat',
-      tagline: 'Empfohlen · erkennt „wer hat angefangen"',
+      tagline: 'Empfohlen, erkennt wer angefangen hat',
       blurb:
-        'Wie Tit for Tat, aber es unterscheidet: Hat der andere dich zu RECHT bestraft (weil du selbst zuletzt nicht kooperiert hast), verzeihst du. Hat er dich GRUNDLOS angegriffen, reagierst du. Verhindert Rache-Schleifen.',
+        'Wie Tit for Tat, aber mit Unterschied: Hat der andere dich zu Recht bestraft, verzeihst du. War der Angriff grundlos, reagierst du. Verhindert Rache-Schleifen.',
       decide(ctx) {
         if (ctx.oppMoves.length === 0) return 'C';
         // Nur gegen jemanden in schlechtem Ansehen wird nicht kooperiert.
@@ -93,21 +93,21 @@
       },
       reason(ctx) {
         const o = ctx.oppMoves;
-        if (o.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
+        if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         const st = standing(o, ctx.myMoves);
-        if (!st.anderer) return 'Er hat grundlos nicht kooperiert, obwohl du fair warst – zieh dich diesmal zurück.';
-        if (o[o.length - 1] === 'D') return 'Seine Nichtkooperation war eine berechtigte Reaktion auf dein eigenes Verhalten – mach es wieder gut und kooperiere.';
-        if (!st.ich) return 'Du bist zuletzt selbst abgewichen – stell das mit Kooperation wieder her.';
-        return 'Der andere hat kooperiert – koopiere zurück.';
+        if (!st.anderer) return 'Er hat grundlos nicht kooperiert, obwohl du fair warst. Zieh dich zurück.';
+        if (o[o.length - 1] === 'D') return 'Seine Nichtkooperation war eine berechtigte Reaktion. Mach es wieder gut.';
+        if (!st.ich) return 'Du bist zuletzt abgewichen. Stell es mit Kooperation wieder her.';
+        return 'Der andere hat kooperiert. Kooperiere zurück.';
       },
     },
 
     pavlov: {
       id: 'pavlov',
       name: 'Pavlov (Win-Stay, Lose-Shift)',
-      tagline: 'Durchsetzungsstark · „was funktioniert, behalte ich bei"',
+      tagline: 'Behält bei, was funktioniert',
       blurb:
-        'Behält den letzten eigenen Zug bei, wenn er sich gelohnt hat, und wechselt, wenn nicht. Sehr erfolgreich und lernt, Nachgiebige auszunutzen – aber weniger „fair" als Tit for Tat.',
+        'Behält den eigenen Zug bei, wenn er sich gelohnt hat, und wechselt sonst. Sehr erfolgreich, nutzt Nachgiebige aber aus.',
       decide(ctx) {
         const o = ctx.oppMoves, m = ctx.myMoves;
         if (o.length === 0) return 'C';
@@ -118,28 +118,28 @@
       },
       reason(ctx, move) {
         const o = ctx.oppMoves, m = ctx.myMoves;
-        if (o.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
+        if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         const lastOpp = o[o.length - 1];
         const myPrev = m.length ? m[m.length - 1] : 'C';
-        if (myPrev === lastOpp) return 'Die letzte Runde lief für dich passend – behalte deinen bewährten Zug bei.';
-        return 'Die letzte Runde lief nicht gut – wechsle deine Strategie.';
+        if (myPrev === lastOpp) return 'Die letzte Runde lief gut. Behalte deinen Zug bei.';
+        return 'Die letzte Runde lief nicht gut. Wechsle den Zug.';
       },
     },
 
     grim: {
       id: 'grim',
       name: 'Grim Trigger',
-      tagline: 'Kompromisslos · ein Verrat = für immer Schluss',
+      tagline: 'Ein Verrat beendet alles',
       blurb:
-        'Kooperiert, solange der andere kooperiert. Ein einziger Vertrauensbruch – und danach nie wieder Kooperation. Maximale Abschreckung, null Vergebung. Für Situationen, in denen Vertrauen absolut ist.',
+        'Kooperiert, solange der andere kooperiert. Ein einziger Vertrauensbruch beendet das für immer. Maximale Abschreckung, null Vergebung.',
       decide(ctx) {
         return ctx.oppMoves.includes('D') ? 'D' : 'C';
       },
       reason(ctx, move) {
-        if (ctx.oppMoves.length === 0) return 'Neuer Kontakt – beginne freundlich mit Kooperation.';
+        if (ctx.oppMoves.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         return move === 'D'
-          ? 'Es gab (mindestens) einen Vertrauensbruch – nach dieser Strategie ist das Vertrauen dauerhaft aufgekündigt.'
-          : 'Bisher lückenlos kooperativ – halte das Vertrauen aufrecht.';
+          ? 'Es gab einen Vertrauensbruch. Das Vertrauen ist dauerhaft aufgekündigt.'
+          : 'Bisher lückenlos kooperativ. Halte das Vertrauen aufrecht.';
       },
     },
   };

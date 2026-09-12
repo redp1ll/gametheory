@@ -666,7 +666,7 @@ svg { display: block; }
 .auth-text { font-size: 15px; color: var(--label-2); line-height: 1.5; margin: 22px 0 26px; letter-spacing: -0.012em; }
 .auth-form { display: flex; flex-direction: column; gap: 10px; }
 .auth-form input {
-  width: 100%; padding: 15px 16px; border-radius: 13px; text-align: center;
+  width: 100%; padding: 15px 16px; border-radius: 13px; text-align: left;
   -webkit-appearance: none;
   background: var(--fill-4); border: 1px solid transparent; outline: none;
   font-size: 17px; letter-spacing: -0.015em; color: var(--label);

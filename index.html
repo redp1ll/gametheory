@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Gambit" />
-  <title>Gambit — Beziehungsstrategie</title>
+  <title>Gambit</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="app.css" />
@@ -30,11 +30,11 @@
       <span class="auth-logo" role="img" aria-label="Gambit"></span>
       <h1>Gambit</h1>
       <p class="auth-claim">Wo stehe ich mit wem?</p>
-      <p class="auth-text" id="authText">Melde dich an, damit deine Einträge sicher gespeichert sind und auf all deinen Geräten zur Verfügung stehen.</p>
+      <p class="auth-text" id="authText">Melde dich an, damit deine Einträge auf allen Geräten sicher liegen.</p>
 
       <form id="authForm" class="auth-form" novalidate>
         <input id="authEmail" type="email" inputmode="email" autocomplete="username"
-               autocapitalize="off" spellcheck="false" placeholder="E-Mail-Adresse" enterkeyhint="next" />
+               autocapitalize="off" spellcheck="false" placeholder="E-Mail" enterkeyhint="next" />
         <input id="authPassword" type="password" autocomplete="current-password"
                placeholder="Passwort" enterkeyhint="go" />
         <button type="submit" class="btn primary wide" id="authSubmit">Anmelden</button>
@@ -46,13 +46,13 @@
       </div>
 
       <form id="newPasswordForm" class="auth-form hidden" novalidate>
-        <p class="auth-sent">Wähle ein neues Passwort für dein Konto.</p>
+        <p class="auth-sent">Wähle ein neues Passwort.</p>
         <input id="newPassword" type="password" autocomplete="new-password"
                placeholder="Neues Passwort" enterkeyhint="go" />
         <button type="submit" class="btn primary wide" id="savePassword">Passwort speichern</button>
       </form>
 
-      <p class="auth-note">Deine Einträge sind nur für dich sichtbar. Die Datenbank steht in Frankfurt.</p>
+      <p class="auth-note">Nur für dich sichtbar. Datenbank in Frankfurt.</p>
     </div>
   </section>
 
@@ -86,7 +86,7 @@
           <path d="M19 8v6M22 11h-6"/>
         </svg>
         <h2>Noch niemand angelegt</h2>
-        <p>Halte fest, wie eure Zusammenarbeit läuft. Gambit schlägt dir den nächsten Zug vor.</p>
+        <p>Halte fest, wie es läuft. Gambit schlägt den nächsten Zug vor.</p>
         <div class="empty-hint" aria-hidden="true">
           <svg class="empty-curve" viewBox="0 0 100 86" preserveAspectRatio="none" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke">

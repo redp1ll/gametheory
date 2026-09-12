@@ -102,7 +102,7 @@
   function buildMatchGrid(p, flashId) {
     const opp = p.rounds.map((r) => r.opp);
     if (!opp.length) {
-      return `<div class="card"><div class="mg-empty">Noch keine Runden. Halte oben die erste Interaktion fest.</div></div>`;
+      return `<div class="card"><div class="mg-empty">Noch keine Runden. Halte oben die erste fest.</div></div>`;
     }
     const my = window.Gambit.replayMyMoves(p.strategy, opp, ownMoves(p));
     // Haken und Minus zusaetzlich zur Farbe: Die Bedeutung haengt damit nicht
@@ -133,8 +133,8 @@
         <span><span class="mdot sm c">${ICON.check(10)}</span>kooperiert</span>
         <span><span class="mdot sm d">${ICON.minus(10)}</span>nicht kooperiert</span>
       </div>
-      <div class="note">Tippe eine Spalte, um sie zu bearbeiten.${p.rounds.some((r) => r.mine)
-        ? ' Umrandete Punkte in der Reihe „Ich" sind eigene Züge, die du abweichend erfasst hast.' : ''}</div>`;
+      <div class="note">Tippe eine Spalte zum Bearbeiten.${p.rounds.some((r) => r.mine)
+        ? ' Umrandete Punkte sind eigene Züge, die du abweichend erfasst hast.' : ''}</div>`;
   }
 
   /* ---------- Liste ---------- */
@@ -242,7 +242,7 @@
     const opp = p.rounds.map((r) => r.opp);
     const rec = recommend(p.strategy, opp, ownMoves(p));
     const coops = opp.filter((m) => m === 'C').length;
-    const rate = opp.length ? Math.round((coops / opp.length) * 100) + '%' : '—';
+    const rate = opp.length ? Math.round((coops / opp.length) * 100) + '%' : '0%';
     const streak = currentStreak(opp);
 
     const timeline = p.rounds.length
@@ -251,7 +251,7 @@
             <span class="row-dot ${r.opp === 'C' ? 'c' : 'd'}"><i></i></span>
             <span class="row-main">
               <span class="row-title">${r.opp === 'C' ? 'Kooperiert' : 'Nicht kooperiert'}</span>
-              <span class="row-sub">${fmtDate(r.date)}${r.topic ? ' · ' + esc(r.topic) : ''}${r.details ? '<br>' + esc(r.details) : ''}</span>
+              <span class="row-sub">${fmtDate(r.date)}${r.topic ? ', ' + esc(r.topic) : ''}${r.details ? '<br>' + esc(r.details) : ''}</span>
             </span>
             <span class="chev">${ICON.chevron()}</span>
           </button>`).join('')
@@ -318,7 +318,7 @@
           <div class="stats">
             <div class="stat"><b>${opp.length}</b><span>Interaktionen</span></div>
             <div class="stat"><b>${rate}</b><span>Kooperation</span></div>
-            <div class="stat"><b>${streak.move ? `${streak.count}<i class="${streak.move === 'C' ? 'c' : 'd'}"></i>` : '—'}</b><span>Serie</span></div>
+            <div class="stat"><b>${streak.move ? `${streak.count}<i class="${streak.move === 'C' ? 'c' : 'd'}"></i>` : '0'}</b><span>Serie</span></div>
           </div>
         </div>
 
@@ -376,7 +376,7 @@
     const nr = p ? p.rounds.findIndex((r) => r.id === roundId) + 1 : 0;
     renderDetail(roundId);
     renderList();
-    if (nr) toast(`Runde ${nr} im Spielverlauf ergänzt.`);
+    if (nr) toast(`Runde ${nr} ergänzt.`);
   }
 
   // Beim Tippen entsteht noch nichts: Erst „Sichern" legt die Interaktion an.
@@ -424,14 +424,14 @@
     };
     openSheet(`
       <h3>${isEdit ? 'Person bearbeiten' : 'Neue Person'}</h3>
-      <p class="sub">${isEdit ? 'Name und Kontext anpassen.' : 'Mit wem willst du deine Züge im Blick behalten?'}</p>
+      <p class="sub">${isEdit ? 'Name und Kontext anpassen.' : 'Wen willst du im Blick behalten?'}</p>
       <div class="field">
         <label>Name</label>
         <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${esc(state.name)}" enterkeyhint="done" />
       </div>
       <div class="field">
         <label>Kontext <span class="opt">optional</span></label>
-        <input id="pContext" type="text" placeholder="z. B. Nachbar · Parkplatz" value="${esc(state.context)}" />
+        <input id="pContext" type="text" placeholder="z. B. Nachbar" value="${esc(state.context)}" />
       </div>
       ${isEdit ? '' : `<div class="field">
         <label>Strategie</label>
@@ -503,7 +503,7 @@
     }).join('');
     openSheet(`
       <h3>Strategie wählen</h3>
-      <p class="sub">Empfohlen: Contrite Tit for Tat – es verzeiht, wenn du zu Recht bestraft wurdest, und reagiert nur auf grundlose Angriffe.</p>
+      <p class="sub">Empfohlen: Contrite Tit for Tat. Verzeiht berechtigte Strafen, reagiert nur auf grundlose Angriffe.</p>
       <div class="rows">${rows}</div>
       <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`, onDismiss);
     document.querySelectorAll('[data-sid]').forEach((b) =>
@@ -559,8 +559,8 @@
     openSheet(`
       <h3>${isNew ? 'Interaktion festhalten' : 'Interaktion bearbeiten'}</h3>
       <p class="sub">${isNew
-        ? 'Datum, Thema und Details sind optional. Mit „Sichern" wird die Interaktion angelegt.'
-        : 'Alles änderbar – auch nachträglich.'}</p>
+        ? 'Optional: Datum, Thema, Details. Erst „Sichern" legt an.'
+        : 'Alles später änderbar.'}</p>
       <div class="field">
         <label>Verhalten</label>
         <div class="seg" id="reSeg">
@@ -575,7 +575,7 @@
           <button type="button" class="${entwurf.mine === 'C' ? 'on' : ''}" data-mine="C"><i class="c"></i>Nett</button>
           <button type="button" class="${entwurf.mine === 'D' ? 'on' : ''}" data-mine="D"><i class="d"></i>Nicht nett</button>
         </div>
-        <p class="field-hint">Standard: Gambit nimmt an, dass du der Empfehlung gefolgt bist – hier wäre das <strong>${geratenText}</strong>. Hast du dich anders verhalten, halte es fest: Contrite und Pavlov beziehen deinen Zug in die nächste Empfehlung ein.</p>
+        <p class="field-hint">Gambit nimmt an, du bist der Empfehlung gefolgt, hier also <strong>${geratenText}</strong>. War es anders, halte es fest: Contrite und Pavlov rechnen damit.</p>
       </div>
       <div class="field">
         <label>Datum</label>
@@ -583,12 +583,12 @@
       </div>
       <div class="field">
         <label>Thema <span class="opt">frei eingeben oder wählen</span></label>
-        <input id="reTopic" list="topicSuggestions" placeholder="z. B. Projekt-Deadline" value="${esc(entwurf.topic)}" autocomplete="off" />
+        <input id="reTopic" list="topicSuggestions" placeholder="z. B. Deadline" value="${esc(entwurf.topic)}" autocomplete="off" />
         <datalist id="topicSuggestions">${suggestions}</datalist>
       </div>
       <div class="field">
         <label>Details <span class="opt">optional</span></label>
-        <textarea id="reDetails" placeholder="Notizen zu dieser Interaktion…">${esc(entwurf.details)}</textarea>
+        <textarea id="reDetails" placeholder="Notizen">${esc(entwurf.details)}</textarea>
       </div>
       <div class="actions">
         <button class="btn ghost" data-close>Abbrechen</button>
@@ -633,7 +633,7 @@
     const p = byId(id);
     openSheet(`
       <h3>„${esc(p.name)}" löschen?</h3>
-      <p class="sub">Die Person und alle ${p.rounds.length} festgehaltenen Interaktionen werden entfernt. Das lässt sich nicht rückgängig machen.</p>
+      <p class="sub">Person und ${p.rounds.length} ${p.rounds.length === 1 ? 'Interaktion' : 'Interaktionen'} werden gelöscht. Das lässt sich nicht rückgängig machen.</p>
       <div class="actions">
         <button class="btn ghost" data-close>Abbrechen</button>
         <button class="btn danger" id="confirmDel">Löschen</button>
@@ -652,7 +652,7 @@
     const t = getTheme();
     openSheet(`
       <h3>Gambit</h3>
-      <p class="sub">Einstellungen und Hintergrundwissen.</p>
+      <p class="sub">Einstellungen und Wissen.</p>
 
       <div class="field">
         <label>Erscheinungsbild</label>
@@ -664,7 +664,7 @@
       <div class="rows" style="margin-top:18px">
         <button class="row" id="mAbout">
           <span class="row-main"><span class="row-title">Über die Strategien</span>
-          <span class="row-sub">Wie Tit for Tat und Vergebung funktionieren</span></span>
+          <span class="row-sub">Wie Tit for Tat und Vergebung wirken</span></span>
           <span class="chev">${ICON.chevron()}</span>
         </button>
         <button class="row" id="mData">
@@ -697,7 +697,7 @@
       <div class="rows">
         <div class="row" style="cursor:default">
           <span class="row-main"><span class="row-title">Speicherort</span>
-          <span class="row-sub">Verschlüsselte Datenbank in Frankfurt. Nur du kannst deine Einträge lesen.</span></span>
+          <span class="row-sub">Frankfurt, verschlüsselt. Nur du kannst mitlesen.</span></span>
         </div>
         <button class="row destructive" id="aSignOut">
           <span class="row-main"><span class="row-title">Abmelden</span></span>
@@ -716,7 +716,7 @@
     }).join('');
     openSheet(`
       <h3>Über die Strategien</h3>
-      <p class="sub">Jede Person kann eine eigene Strategie nutzen. Der Standard erkennt, ob eine Nichtkooperation eine berechtigte Reaktion auf dein eigenes Verhalten war – so entstehen keine Rache-Schleifen aus einem Missverständnis.</p>
+      <p class="sub">Jede Person kann eine eigene Strategie haben. Der Standard erkennt berechtigte Reaktionen und verhindert so Rache-Schleifen aus Missverständnissen.</p>
       <div class="rows">${rows}</div>
       <div class="actions"><button class="btn ghost wide" data-close>Fertig</button></div>`);
   }
@@ -858,7 +858,7 @@
     mode = next;
     const signup = mode === 'signup';
     authText.textContent = signup
-      ? `Lege ein Konto an. Wähle ein Passwort mit mindestens ${MIN_PASSWORD} Zeichen – dein iPhone kann es im Schlüsselbund sichern.`
+      ? `Lege ein Konto an. Mindestens ${MIN_PASSWORD} Zeichen, dein iPhone sichert es im Schlüsselbund.`
       : 'Melde dich an, damit deine Einträge sicher gespeichert sind und auf all deinen Geräten zur Verfügung stehen.';
     authSubmit.textContent = signup ? 'Konto anlegen' : 'Anmelden';
     toggleModeBtn.textContent = signup ? 'Ich habe schon ein Konto' : 'Noch kein Konto? Jetzt anlegen';
@@ -934,12 +934,12 @@
     const email = emailInput.value.trim();
     if (!validEmail(email)) {
       emailInput.classList.add('invalid'); emailInput.focus();
-      toast('Trage zuerst deine E-Mail-Adresse ein.', 'error');
+      toast('Trage zuerst deine E-Mail ein.', 'error');
       return;
     }
     try {
       await Store.requestPasswordReset(email);
-      toast('Wir haben dir einen Link zum Zurücksetzen geschickt.');
+      toast('Link zum Zurücksetzen verschickt.');
     } catch (err) {
       console.error(err);
       toast(authError(err, 'Der Link konnte nicht gesendet werden.'), 'error');
@@ -1006,7 +1006,7 @@
   function offerReload() {
     openSheet(`
       <h3>Daten nicht erreichbar</h3>
-      <p class="sub">Deine Einträge konnten nicht geladen werden. Angezeigt wird der zuletzt bekannte Stand. Bitte lade erneut, bevor du etwas erfasst – sonst kann Gespeichertes fehlen.</p>
+      <p class="sub">Angezeigt wird der letzte bekannte Stand. Lade erneut, bevor du etwas erfasst, sonst kann Gespeichertes fehlen.</p>
       <div class="actions">
         <button class="btn ghost" data-close>Später</button>
         <button class="btn primary" id="retryLoad">Erneut laden</button>
@@ -1030,7 +1030,7 @@
     const rounds = list.reduce((n, p) => n + ((p.rounds || []).length), 0);
     openSheet(`
       <h3>Frühere Einträge übernehmen?</h3>
-      <p class="sub">Auf diesem Gerät liegen noch ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} mit ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'} aus der Zeit vor der Anmeldung. Sollen sie in dein Konto übernommen werden?</p>
+      <p class="sub">Auf diesem Gerät liegen noch ${list.length} ${list.length === 1 ? 'Person' : 'Personen'} mit ${rounds} ${rounds === 1 ? 'Interaktion' : 'Interaktionen'} aus der Zeit vor der Anmeldung. In dein Konto übernehmen?</p>
       <div class="actions">
         <button class="btn ghost" id="legacySkip">Verwerfen</button>
         <button class="btn primary" id="legacyTake">Übernehmen</button>
