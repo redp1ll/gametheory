@@ -159,7 +159,7 @@
       .eq('id', id);
     if (error) throw error;
     const person = state.people.find((p) => p.id === id);
-    if (!person) throw new Error('Datenbestand nicht aktuell – bitte neu laden.');
+    if (!person) throw new Error('Datenbestand nicht aktuell. Bitte neu laden.');
     Object.assign(person, patch);
     cache();
   }
@@ -178,7 +178,7 @@
       .select().single();
     if (error) throw error;
     const person = state.people.find((p) => p.id === personId);
-    if (!person) throw new Error('Datenbestand nicht aktuell – bitte neu laden.');
+    if (!person) throw new Error('Datenbestand nicht aktuell. Bitte neu laden.');
     const round = {
       id: data.id, opp: data.opp, mine: data.mine || null,
       date: dateToMs(data.occurred_on), seq: data.created_at,
