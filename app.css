@@ -665,7 +665,7 @@ svg { display: block; }
 
 /* Verlauf-Zeilen */
 /* Verlauf eingeklappt: nur der neueste Eintrag */
-.rows.zu .row:not(:first-child) { display: none; }
+.rows.zu .tl-item:not(:first-child) { display: none; }
 .more-row {
   display: block; width: 100%; margin-top: 8px; padding: 13px 14px;
   background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1);
@@ -674,6 +674,34 @@ svg { display: block; }
 }
 .more-row:active { background: var(--fill-4); }
 @media (hover: hover) { .more-row:hover { background: var(--fill-4); } }
+
+/* Karte "Details": eingeklappt drei klar getrennte Ebenen, aufgeklappt
+   zusaetzlich der Freitext und das Bearbeiten. */
+.tl-item { position: relative; }
+.tl-item + .tl-item::before {
+  content: ''; position: absolute; left: 50px; right: 0; top: 0; height: .5px; background: var(--separator);
+}
+.tl-head {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%;
+  padding: 13px 14px; text-align: left; cursor: pointer;
+  transition: background .15s var(--ease);
+}
+.tl-head:active { background: var(--fill-4); }
+@media (hover: hover) { .tl-head:hover { background: var(--fill-4); } }
+.tl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.tl-title { font-size: 17px; letter-spacing: -0.019em; }
+.tl-date { font-size: 13px; color: var(--label-3); letter-spacing: -0.004em; }
+.tl-topic { font-size: 13px; padding: 3px 9px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.tl-chev { color: var(--label-3); margin-top: 3px; transition: transform .22s var(--ease); }
+.tl-item.offen .tl-chev { transform: rotate(90deg); }
+.tl-body { display: none; padding: 0 14px 14px 50px; }
+.tl-item.offen .tl-body { display: block; }
+.tl-text {
+  font-size: 15px; color: var(--label-2); line-height: 1.5;
+  letter-spacing: -0.012em; white-space: pre-wrap; margin-bottom: 10px;
+}
+.tl-edit { font-size: 15px; color: var(--accent); letter-spacing: -0.012em; padding: 4px 0; }
+.tl-edit:active { opacity: .5; }
 
 .tl-empty { padding: 26px 18px; text-align: center; font-size: 14px; color: var(--label-3); }
 
