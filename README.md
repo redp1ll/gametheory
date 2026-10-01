@@ -3,7 +3,7 @@
 Eine minimalistische App, um auf Basis der **Spieltheorie** (Tit for Tat & Verwandte) den
 Überblick zu behalten, *mit welcher Person du wo stehst* — und was dein nächster kluger Zug ist.
 
-Lege eine Person an (z. B. „Tom Müller"), hake nach jeder Interaktion an, ob sie **nett war
+Lege eine Person an, hake nach jeder Interaktion an, ob sie **nett war
 und kooperiert hat (grün)** oder **nicht (rot)**. Gambit schlägt dir – begründet durch die
 gewählte Strategie – vor, ob du beim nächsten Mal **kooperieren** oder **dich zurückziehen** solltest.
 
