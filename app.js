@@ -47,6 +47,7 @@
   // Schreibvorgaenge landeten dann in der Datenbank, aber nie in der Anzeige.
   let currentId = null;
   let verlaufOffen = false; // Verlauf zeigt eingeklappt nur den neuesten Eintrag
+  const offeneRunden = new Set(); // aufgeklappte Zeilen in der Karte "Details"
   const people = () => Store.people;
   function byId(id) { return Store.people.find((p) => p.id === id); }
 
@@ -234,6 +235,7 @@
 
   function openDetail(id) {
     verlaufOffen = false;
+    offeneRunden.clear();
     currentId = id;
     renderDetail();
     detailView.classList.remove('hidden');
@@ -256,16 +258,28 @@
     const rate = opp.length ? Math.round((coops / opp.length) * 100) + '%' : '0%';
     const streak = currentStreak(opp);
 
+    /* Eingeklappt stehen nur Interaktion, Datum und Thema. Der Freitext und
+       das Bearbeiten erscheinen erst, wenn die Zeile geoeffnet ist. */
     const timeline = p.rounds.length
-      ? [...p.rounds].reverse().map((r) => `
-          <button class="row inset-sep" data-round="${r.id}">
-            <span class="row-dot ${r.opp === 'C' ? 'c' : 'd'}"><i></i></span>
-            <span class="row-main">
-              <span class="row-title">${r.opp === 'C' ? 'Kooperiert' : 'Nicht kooperiert'}</span>
-              <span class="row-sub">${fmtDate(r.date)}${r.topic ? ', ' + esc(r.topic) : ''}${r.details ? '<br>' + esc(r.details) : ''}</span>
-            </span>
-            <span class="chev">${ICON.chevron()}</span>
-          </button>`).join('')
+      ? [...p.rounds].reverse().map((r) => {
+          const offen = offeneRunden.has(r.id);
+          return `
+          <div class="tl-item${offen ? ' offen' : ''}" data-rid="${r.id}">
+            <button class="tl-head" data-auf="${r.id}" aria-expanded="${offen}">
+              <span class="row-dot ${r.opp === 'C' ? 'c' : 'd'}"><i></i></span>
+              <span class="tl-main">
+                <span class="tl-title">${r.opp === 'C' ? 'Kooperiert' : 'Nicht kooperiert'}</span>
+                <span class="tl-date">${fmtDate(r.date)}</span>
+                ${r.topic ? `<span class="tag tl-topic">${esc(r.topic)}</span>` : ''}
+              </span>
+              <span class="tl-chev">${ICON.chevron()}</span>
+            </button>
+            <div class="tl-body">
+              ${r.details ? `<p class="tl-text">${esc(r.details)}</p>` : ''}
+              <button class="tl-edit" data-round="${r.id}">Bearbeiten</button>
+            </div>
+          </div>`;
+        }).join('')
       : '<div class="tl-empty">Noch keine Interaktion festgehalten.</div>';
 
     detailView.innerHTML = `
@@ -352,6 +366,14 @@
       b.addEventListener('click', () => logInteraction(p.id, b.dataset.log)));
     detailView.querySelectorAll('[data-round]').forEach((c) =>
       c.addEventListener('click', () => openRoundSheet(p.id, c.dataset.round)));
+    // Auf- und zuklappen ohne Neuaufbau, damit die Scrollposition bleibt.
+    detailView.querySelectorAll('[data-auf]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.dataset.auf;
+      const item = detailView.querySelector(`.tl-item[data-rid="${id}"]`);
+      const offen = item.classList.toggle('offen');
+      if (offen) offeneRunden.add(id); else offeneRunden.delete(id);
+      b.setAttribute('aria-expanded', String(offen));
+    }));
     const toggle = detailView.querySelector('#verlaufToggle');
     if (toggle) toggle.addEventListener('click', () => {
       verlaufOffen = !verlaufOffen;
