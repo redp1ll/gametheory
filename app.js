@@ -155,12 +155,26 @@
   const searchInput = document.getElementById('search');
   const searchWrap = document.getElementById('searchWrap');
 
+  /* Zuletzt Erlebtes oben. Runden speichern nur ein Datum, alle auf 12 Uhr
+     normiert; bei Interaktionen am selben Tag entschied deshalb die
+     Reihenfolge der Datenbank, also das Anlegedatum der Person. Jetzt
+     entscheidet der Zeitstempel der Erfassung (seq). Ohne Runden zaehlt,
+     wann die Person angelegt wurde. */
+  function letzterKontakt(p) {
+    const r = p.rounds.at(-1);
+    return r ? { tag: r.date, seq: r.seq || '' } : { tag: p.created, seq: '' };
+  }
+  function nachAktualitaet(a, b) {
+    const x = letzterKontakt(a), y = letzterKontakt(b);
+    return (y.tag - x.tag) || (y.seq < x.seq ? -1 : y.seq > x.seq ? 1 : 0);
+  }
+
   function renderList() {
     const q = searchInput.value.trim().toLowerCase();
     searchWrap.classList.toggle('filled', q.length > 0);
     const filtered = people()
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.context || '').toLowerCase().includes(q))
-      .sort((a, b) => (b.rounds.at(-1)?.date || b.created) - (a.rounds.at(-1)?.date || a.created));
+      .sort(nachAktualitaet);
 
     peopleList.innerHTML = '';
     const noneAtAll = people().length === 0;
