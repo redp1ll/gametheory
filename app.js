@@ -14,6 +14,7 @@
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const ICON = {
     back:    (s = 20) => S('<path d="M14.5 4.5 7 12l7.5 7.5"/>', { s, w: 2.4 }),
+    close:   (s = 14) => S('<path d="M6 6l12 12M18 6 6 18"/>', { s, w: 2.4 }),
     chevron: (s = 15) => S('<path d="M9 5.5 15.5 12 9 18.5"/>', { s, w: 2.2 }),
     dots:    (s = 20) => S('<circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/>', { s, fill: 'currentColor' }),
     check:   (s = 19) => S('<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>', { s, w: 2.6 }),
@@ -93,6 +94,16 @@
   }
   function esc(s) { return (s || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
   function firstName(name) { return name.trim().split(/\s+/)[0] || name; }
+  /* Tags stehen als kommagetrennte Liste im Feld `context`. Das kommt ohne
+     Schemaaenderung aus; die Suche findet sie weiterhin als Text. */
+  const splitTags = (s) => String(s || '').split(',').map((t) => t.trim()).filter(Boolean);
+  function allTags() {
+    const map = new Map();
+    for (const p of people()) for (const t of splitTags(p.context)) {
+      if (!map.has(t.toLowerCase())) map.set(t.toLowerCase(), t);
+    }
+    return [...map.values()].sort((a, b) => a.localeCompare(b, 'de'));
+  }
   const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
   /* ---------- Spielverlauf-Raster ---------- */
@@ -164,7 +175,7 @@
 
     for (const p of filtered) {
       const opp = p.rounds.map((r) => r.opp);
-      const rec = recommend(p.strategy, opp, ownMoves(p));
+      const rec = recommend(p.strategy, opp, ownMoves(p), firstName(p.name));
       const spark = opp.length
         ? opp.slice(-7).map((m) => `<i class="${m === 'C' ? 'c' : 'd'}"></i>`).join('')
         : '<i class="none"></i>';
@@ -240,7 +251,7 @@
     const p = byId(currentId);
     if (!p) return closeDetail();
     const opp = p.rounds.map((r) => r.opp);
-    const rec = recommend(p.strategy, opp, ownMoves(p));
+    const rec = recommend(p.strategy, opp, ownMoves(p), firstName(p.name));
     const coops = opp.filter((m) => m === 'C').length;
     const rate = opp.length ? Math.round((coops / opp.length) * 100) + '%' : '0%';
     const streak = currentStreak(opp);
@@ -266,10 +277,12 @@
       <div class="wrap">
         <div class="section">
           <div class="p-card">
-            <button class="p-card-top" id="identRow" aria-label="Name und Kontext bearbeiten">
+            <button class="p-card-top" id="identRow" aria-label="Name und Tags bearbeiten">
               <span class="p-card-id">
                 <span class="p-title">${esc(p.name)}</span>
-                ${p.context ? `<span class="p-sub">${esc(p.context)}</span>` : ''}
+                ${splitTags(p.context).length
+                  ? `<span class="p-tags">${splitTags(p.context).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</span>`
+                  : ''}
               </span>
               <span class="chev">${ICON.chevron()}</span>
             </button>
@@ -419,19 +432,24 @@
     const isEdit = !!existing;
     const state = draft || {
       name: isEdit ? existing.name : '',
-      context: isEdit ? (existing.context || '') : '',
+      tags: isEdit ? splitTags(existing.context) : [],
       strategy: isEdit ? existing.strategy : DEFAULT_STRATEGY,
     };
     openSheet(`
       <h3>${isEdit ? 'Person bearbeiten' : 'Neue Person'}</h3>
-      <p class="sub">${isEdit ? 'Name und Kontext anpassen.' : 'Wen willst du im Blick behalten?'}</p>
+      <p class="sub">${isEdit ? 'Name und Tags anpassen.' : 'Wen willst du im Blick behalten?'}</p>
       <div class="field">
         <label>Name</label>
         <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${esc(state.name)}" enterkeyhint="done" />
       </div>
       <div class="field">
-        <label>Kontext <span class="opt">optional</span></label>
-        <input id="pContext" type="text" placeholder="z. B. Nachbar" value="${esc(state.context)}" />
+        <label>Tags <span class="opt">optional</span></label>
+        <div class="tag-box" id="pTagBox">
+          <span class="tag-chips" id="pTagChips"></span>
+          <input id="pContext" type="text" placeholder="Tag eingeben, dann Enter"
+                 enterkeyhint="done" autocomplete="off" autocapitalize="words" />
+        </div>
+        <div class="tag-sugg" id="pTagSugg"></div>
       </div>
       ${isEdit ? '' : `<div class="field">
         <label>Strategie</label>
@@ -449,10 +467,49 @@
       </div>`);
     const nameInput = document.getElementById('pName');
     setTimeout(() => nameInput.focus(), 80);
+
+    /* Tags: Eingabe mit Enter wird zur Plakette, bereits vergebene Tags
+       stehen darunter zum Antippen bereit. */
+    const tags = state.tags.slice();
+    const chips = document.getElementById('pTagChips');
+    const sugg = document.getElementById('pTagSugg');
+    const tagInput = document.getElementById('pContext');
+    const hatTag = (t) => tags.some((x) => x.toLowerCase() === t.toLowerCase());
+    function addTag(roh) {
+      const t = String(roh || '').replace(/,/g, ' ').trim();
+      if (!t || hatTag(t)) { tagInput.value = ''; return; }
+      tags.push(t); tagInput.value = ''; zeichneTags();
+    }
+    function zeichneTags() {
+      chips.innerHTML = tags.map((t, i) =>
+        `<span class="tag">${esc(t)}<button type="button" class="tag-x" data-weg="${i}"
+           aria-label="${esc(t)} entfernen">${ICON.close(13)}</button></span>`).join('');
+      chips.querySelectorAll('[data-weg]').forEach((b) => b.addEventListener('click', () => {
+        tags.splice(Number(b.dataset.weg), 1); zeichneTags();
+      }));
+      const offen = allTags().filter((t) => !hatTag(t));
+      sugg.innerHTML = offen.length
+        ? `<span class="tag-cap">Bereits verwendet</span>` + offen.map((t) =>
+            `<button type="button" class="tag ghost" data-dazu="${esc(t)}">${esc(t)}</button>`).join('')
+        : '';
+      sugg.querySelectorAll('[data-dazu]').forEach((b) =>
+        b.addEventListener('click', () => addTag(b.dataset.dazu)));
+    }
+    zeichneTags();
+    tagInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput.value); }
+      else if (e.key === 'Backspace' && !tagInput.value && tags.length) { tags.pop(); zeichneTags(); }
+    });
+    document.getElementById('pTagBox').addEventListener('click', (e) => {
+      if (e.target.closest('.tag')) return;
+      tagInput.focus();
+    });
+
     // Aktuelle Eingaben einsammeln, damit sie den Abstecher überleben.
     const readDraft = () => ({
       name: nameInput.value,
-      context: document.getElementById('pContext').value,
+      tags: tagInput.value.trim() && !hatTag(tagInput.value.trim())
+        ? tags.concat(tagInput.value.trim()) : tags.slice(),
       strategy: state.strategy,
     });
     const stratRow = document.getElementById('pStratRow');
@@ -467,7 +524,8 @@
     document.getElementById('savePerson').addEventListener('click', async () => {
       const name = nameInput.value.trim();
       if (!name) { nameInput.classList.add('invalid'); nameInput.focus(); return; }
-      const context = document.getElementById('pContext').value.trim();
+      addTag(tagInput.value);
+      const context = tags.join(', ');
       const strategy = state.strategy;
       const saveBtn = document.getElementById('savePerson');
       saveBtn.disabled = true; saveBtn.textContent = 'Wird gesichert…';
