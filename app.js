@@ -482,7 +482,7 @@
       <p class="sub">${isEdit ? 'Name und Tags anpassen.' : 'Wen willst du im Blick behalten?'}</p>
       <div class="field">
         <label>Name</label>
-        <input id="pName" type="text" placeholder="z. B. Tom Müller" value="${esc(state.name)}" enterkeyhint="done" />
+        <input id="pName" type="text" placeholder="Vor- und Nachname" value="${esc(state.name)}" enterkeyhint="done" />
       </div>
       <div class="field">
         <label>Tags <span class="opt">optional</span></label>

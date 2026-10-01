@@ -161,7 +161,7 @@
 
   // Empfehlung für den NÄCHSTEN Zug + Begründung.
   // `name` ist der Vorname der Person. Die Begruendungen nennen ihn, statt
-  // ein Geschlecht zu raten: "Jasmin hat nicht kooperiert" statt "Er hat".
+  // ein Geschlecht zu raten: "<Vorname> hat nicht kooperiert" statt "Er hat".
   function recommend(strategyId, oppMoves, ownMoves, name) {
     const strat = STRATEGIES[strategyId] || STRATEGIES[DEFAULT_STRATEGY];
     const myMoves = replayMyMoves(strategyId, oppMoves, ownMoves);
