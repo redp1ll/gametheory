@@ -75,8 +75,8 @@
         const o = ctx.oppMoves;
         if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         return move === 'C'
-          ? 'Der andere hat kooperiert. Spiegle das.'
-          : 'Der andere hat nicht kooperiert. Spiegle das.';
+          ? `${ctx.name} hat kooperiert. Spiegle das.`
+          : `${ctx.name} hat nicht kooperiert. Spiegle das.`;
       },
     },
 
@@ -95,10 +95,10 @@
         const o = ctx.oppMoves;
         if (o.length === 0) return 'Neuer Kontakt. Beginne freundlich.';
         const st = standing(o, ctx.myMoves);
-        if (!st.anderer) return 'Er hat grundlos nicht kooperiert, obwohl du fair warst. Zieh dich zurück.';
-        if (o[o.length - 1] === 'D') return 'Seine Nichtkooperation war eine berechtigte Reaktion. Mach es wieder gut.';
+        if (!st.anderer) return `${ctx.name} hat grundlos nicht kooperiert, obwohl du fair warst. Zieh dich zurück.`;
+        if (o[o.length - 1] === 'D') return 'Die Nichtkooperation war eine berechtigte Reaktion. Mach es wieder gut.';
         if (!st.ich) return 'Du bist zuletzt abgewichen. Stell es mit Kooperation wieder her.';
-        return 'Der andere hat kooperiert. Kooperiere zurück.';
+        return `${ctx.name} hat kooperiert. Kooperiere zurück.`;
       },
     },
 
@@ -160,10 +160,12 @@
   }
 
   // Empfehlung für den NÄCHSTEN Zug + Begründung.
-  function recommend(strategyId, oppMoves, ownMoves) {
+  // `name` ist der Vorname der Person. Die Begruendungen nennen ihn, statt
+  // ein Geschlecht zu raten: "Jasmin hat nicht kooperiert" statt "Er hat".
+  function recommend(strategyId, oppMoves, ownMoves, name) {
     const strat = STRATEGIES[strategyId] || STRATEGIES[DEFAULT_STRATEGY];
     const myMoves = replayMyMoves(strategyId, oppMoves, ownMoves);
-    const ctx = { oppMoves: oppMoves.slice(), myMoves };
+    const ctx = { oppMoves: oppMoves.slice(), myMoves, name: (name || '').trim() || 'Die Person' };
     const move = strat.decide(ctx);
     const reason = strat.reason(ctx, move);
     return { move, reason, strategy: strat };

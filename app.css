@@ -587,6 +587,41 @@ svg { display: block; }
   transition: border-color .18s var(--ease), background .18s var(--ease);
 }
 .field textarea { resize: vertical; min-height: 76px; line-height: 1.45; }
+
+/* Tags: Plaketten im Eingabefeld, darunter die bereits vergebenen zum
+   Antippen. Gespeichert wird weiterhin eine kommagetrennte Liste. */
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 999px; background: var(--fill-3);
+  font-size: 14px; letter-spacing: -0.008em; white-space: nowrap;
+}
+.tag-x { display: grid; place-items: center; color: var(--label-2); margin-right: -3px; padding: 2px; }
+.tag-x:active { opacity: .5; }
+.tag.ghost {
+  background: none; border: 1px solid var(--separator); color: var(--label-2); cursor: pointer;
+  transition: background .15s var(--ease);
+}
+.tag.ghost:active { background: var(--fill-4); }
+@media (hover: hover) { .tag.ghost:hover { background: var(--fill-4); } }
+.tag-box {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: var(--r-sm);
+  background: var(--fill-4); border: 1px solid transparent; cursor: text;
+  transition: border-color .18s var(--ease);
+}
+.tag-box:focus-within { border-color: var(--accent); }
+/* damit Plaketten und Eingabe gemeinsam umbrechen */
+.tag-chips { display: contents; }
+.field .tag-box input {
+  flex: 1; min-width: 130px; width: auto;
+  padding: 5px 2px; background: none; border: none; border-radius: 0;
+}
+.tag-sugg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding-left: 2px; }
+.tag-sugg:empty { display: none; }
+.tag-cap { font-size: 12px; color: var(--label-3); width: 100%; }
+
+/* Tags auf der Personen-Card */
+.p-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); background: var(--surface-2); }
 .field input[type="date"] {
   -webkit-appearance: none; appearance: none;
