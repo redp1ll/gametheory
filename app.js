@@ -6,6 +6,7 @@
   const { STRATEGIES, DEFAULT_STRATEGY, order, recommend } = window.Gambit;
   const Store = window.GambitStore;
   const THEME_KEY = 'gambit.theme';
+  const SORT_KEY = 'gambit.sort';
 
   /* ---------- Icons (SF-Symbols-Anmutung) ---------- */
   const S = (d, o = {}) =>
@@ -28,6 +29,9 @@
 
   /* ---------- Erscheinungsbild ---------- */
   const THEMES = { system: 'System', light: 'Hell', dark: 'Dunkel' };
+  const SORTS = { aktuell: 'Letzte Interaktion', name: 'Name A bis Z' };
+  function getSort() { return SORTS[localStorage.getItem(SORT_KEY)] ? localStorage.getItem(SORT_KEY) : 'aktuell'; }
+  function applySort(v) { localStorage.setItem(SORT_KEY, v); renderList(); }
   function getTheme() { return localStorage.getItem(THEME_KEY) || 'system'; }
   function applyTheme(mode) {
     const root = document.documentElement;
@@ -168,13 +172,15 @@
     const x = letzterKontakt(a), y = letzterKontakt(b);
     return (y.tag - x.tag) || (y.seq < x.seq ? -1 : y.seq > x.seq ? 1 : 0);
   }
+  // Nach Name: deutsche Sortierung, damit Umlaute richtig einsortiert werden.
+  function nachName(a, b) { return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }); }
 
   function renderList() {
     const q = searchInput.value.trim().toLowerCase();
     searchWrap.classList.toggle('filled', q.length > 0);
     const filtered = people()
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.context || '').toLowerCase().includes(q))
-      .sort(nachAktualitaet);
+      .sort(getSort() === 'name' ? nachName : nachAktualitaet);
 
     peopleList.innerHTML = '';
     const noneAtAll = people().length === 0;
@@ -743,7 +749,7 @@
 
   /* ---------- Hauptmenü ---------- */
   function openMainMenu() {
-    const t = getTheme();
+    const t = getTheme(), so = getSort();
     openSheet(`
       <h3>Gambit</h3>
       <p class="sub">Einstellungen und Wissen.</p>
@@ -752,6 +758,13 @@
         <label>Erscheinungsbild</label>
         <div class="seg" id="themeSeg">
           ${Object.entries(THEMES).map(([k, v]) => `<button type="button" data-theme-opt="${k}" class="${t === k ? 'on' : ''}">${v}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Liste sortieren</label>
+        <div class="seg" id="sortSeg">
+          ${Object.entries(SORTS).map(([k, v]) => `<button type="button" data-sort-opt="${k}" class="${so === k ? 'on' : ''}">${v}</button>`).join('')}
         </div>
       </div>
 
@@ -777,6 +790,11 @@
       b.addEventListener('click', () => {
         applyTheme(b.dataset.themeOpt);
         document.querySelectorAll('[data-theme-opt]').forEach((x) => x.classList.toggle('on', x === b));
+      }));
+    document.querySelectorAll('[data-sort-opt]').forEach((b) =>
+      b.addEventListener('click', () => {
+        applySort(b.dataset.sortOpt);
+        document.querySelectorAll('[data-sort-opt]').forEach((x) => x.classList.toggle('on', x === b));
       }));
     document.getElementById('mAbout').addEventListener('click', openAbout);
     document.getElementById('mData').addEventListener('click', openDataSheet);
