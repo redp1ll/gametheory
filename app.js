@@ -601,8 +601,8 @@
      - Das Fenster folgt dem Finger, die Abdunkelung laesst im selben Mass nach.
      - Es schliesst, wenn weiter als 30 % der Fensterhoehe gezogen oder
        schneller als 0,5 px/ms gewischt wurde; sonst federt es zurueck.
-     - Ist der Inhalt gescrollt, scrollt Wischen erst nach oben; erst ganz oben
-       uebernimmt das Fenster, auch mitten in derselben Bewegung.
+     - Ist der Inhalt gescrollt, scrollt Wischen ihn wie gewohnt; ein neuer
+       Wisch von ganz oben schliesst dann das Fenster.
      - In Eingabefeldern bleibt Wischen dem Feld vorbehalten (Cursor, Markieren).
      - Seitliches Wischen und Wischen nach oben bleiben unangetastet. */
   const SCHWELLE = 6; // px, ab hier gilt eine Bewegung als Wischen
@@ -612,7 +612,9 @@
     sheet.addEventListener('touchstart', (e) => {
       if (e.touches.length !== 1 || overlay.classList.contains('raus')) { aus = true; return; }
       const t = e.touches[0];
-      aus = !!e.target.closest('input, textarea, select, [contenteditable="true"]');
+      // Im Eingabefeld oder bei gescrolltem Inhalt gehoert die Geste dem
+      // Feld bzw. dem Scrollen.
+      aus = !!e.target.closest('input, textarea, select, [contenteditable="true"]') || sheet.scrollTop > 0;
       aktiv = false; weg = 0;
       startY = t.clientY; startX = t.clientX;
       spur = [{ y: t.clientY, t: performance.now() }];
@@ -622,10 +624,18 @@
       const t = e.touches[0];
       if (!aktiv) {
         const dy = t.clientY - startY, dx = t.clientX - startX;
-        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { aus = true; return; }
-        // Inhalt noch gescrollt: dem Scrollen den Vortritt lassen und den
-        // Startpunkt mitfuehren, bis der Inhalt oben angekommen ist.
-        if (sheet.scrollTop > 0) { startY = t.clientY; startX = t.clientX; return; }
+        // Scrollt Safari bereits, laesst sich die Geste nicht mehr uebernehmen.
+        if (!e.cancelable) { aus = true; return; }
+        if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) {
+          // Nach oben oder seitlich: gehoert dem Scrollen, sobald eindeutig.
+          if (Math.abs(dx) > 10 || dy < -6) aus = true;
+          return;
+        }
+        // Nach unten: sofort beanspruchen, schon vor der Schwelle. Safari
+        // entscheidet bei der ersten Fingerbewegung, wem die Geste gehoert,
+        // und ignoriert jedes spaetere preventDefault. Wer die ersten Pixel
+        // durchlaesst, hat die Geste an das Scrollen verloren.
+        e.preventDefault();
         if (dy < SCHWELLE) return;
         aktiv = true;
         sheet.getAnimations().forEach((a) => a.finish());
