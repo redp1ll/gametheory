@@ -571,19 +571,99 @@
     overlay.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', dismissSheet));
     modalRoot.replaceChildren(overlay);
     dismissHandler = onDismiss || null;
+    wischenZumSchliessen(overlay);
     return overlay;
   }
-  function sheetWeg() {
+  // `gewischt` = { weg, tempo }: Das Fenster faehrt von dort weiter, wo der
+  // Finger es losgelassen hat, und im Tempo der Wischbewegung.
+  function sheetWeg(gewischt) {
     const overlay = modalRoot.querySelector('.scrim:not(.raus)');
     if (!overlay) return;
-    ausblenden(overlay, 'raus', () => overlay.remove());
+    if (!gewischt || wenigBewegung()) { ausblenden(overlay, 'raus', () => overlay.remove()); return; }
+    const sheet = overlay.querySelector('.sheet');
+    const rest = Math.max(0, sheet.offsetHeight - gewischt.weg);
+    const dauer = Math.round(Math.min(320, Math.max(170, rest / Math.max(gewischt.tempo, 1.4))));
+    overlay.classList.add('raus', 'gewischt');
+    overlay.style.setProperty('--dauer', dauer + 'ms');
+    sheet.animate([{ transform: `translateY(${gewischt.weg}px)` }, { transform: 'translateY(100%)' }],
+      { duration: dauer, easing: 'cubic-bezier(.25,.8,.35,1)', fill: 'forwards' })
+      .onfinish = () => overlay.remove();
   }
   function closeSheet() { dismissHandler = null; sheetWeg(); }
-  function dismissSheet() {
+  function dismissSheet(gewischt) {
     const handler = dismissHandler;
     dismissHandler = null;
-    sheetWeg();
+    sheetWeg(gewischt && gewischt.weg != null ? gewischt : undefined);
     if (handler) handler();
+  }
+
+  /* Wischen nach unten schliesst das Fenster, wie in iOS.
+     - Das Fenster folgt dem Finger, die Abdunkelung laesst im selben Mass nach.
+     - Es schliesst, wenn weiter als 30 % der Fensterhoehe gezogen oder
+       schneller als 0,5 px/ms gewischt wurde; sonst federt es zurueck.
+     - Ist der Inhalt gescrollt, scrollt Wischen erst nach oben; erst ganz oben
+       uebernimmt das Fenster, auch mitten in derselben Bewegung.
+     - In Eingabefeldern bleibt Wischen dem Feld vorbehalten (Cursor, Markieren).
+     - Seitliches Wischen und Wischen nach oben bleiben unangetastet. */
+  const SCHWELLE = 6; // px, ab hier gilt eine Bewegung als Wischen
+  function wischenZumSchliessen(overlay) {
+    const sheet = overlay.querySelector('.sheet');
+    let startY = 0, startX = 0, weg = 0, aktiv = false, aus = false, spur = [];
+    sheet.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1 || overlay.classList.contains('raus')) { aus = true; return; }
+      const t = e.touches[0];
+      aus = !!e.target.closest('input, textarea, select, [contenteditable="true"]');
+      aktiv = false; weg = 0;
+      startY = t.clientY; startX = t.clientX;
+      spur = [{ y: t.clientY, t: performance.now() }];
+    }, { passive: true });
+    sheet.addEventListener('touchmove', (e) => {
+      if (aus || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      if (!aktiv) {
+        const dy = t.clientY - startY, dx = t.clientX - startX;
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { aus = true; return; }
+        // Inhalt noch gescrollt: dem Scrollen den Vortritt lassen und den
+        // Startpunkt mitfuehren, bis der Inhalt oben angekommen ist.
+        if (sheet.scrollTop > 0) { startY = t.clientY; startX = t.clientX; return; }
+        if (dy < SCHWELLE) return;
+        aktiv = true;
+        sheet.getAnimations().forEach((a) => a.finish());
+        overlay.classList.add('zieht');
+      }
+      e.preventDefault();
+      // Der Weg zaehlt ab dem Aufsetzpunkt, nur die Startschwelle wird
+      // abgezogen. Haelt das System die ersten Bewegungen zurueck, holt das
+      // Fenster sie so nach, statt dem Finger dauerhaft hinterherzuhinken.
+      const roh = t.clientY - startY - SCHWELLE;
+      // Nach oben nur ein leichter Widerstand, nach unten folgt es dem Finger.
+      weg = roh >= 0 ? roh : -Math.min(24, Math.sqrt(-roh) * 2);
+      sheet.style.transform = `translateY(${weg}px)`;
+      overlay.style.setProperty('--dunkel', String(Math.max(0, 1 - Math.max(0, weg) / sheet.offsetHeight)));
+      spur.push({ y: t.clientY, t: performance.now() });
+      if (spur.length > 6) spur.shift();
+    }, { passive: false });
+    const loslassen = () => {
+      if (!aktiv) return;
+      aktiv = false;
+      const a = spur[0], b = spur[spur.length - 1];
+      const tempo = b && a && b.t > a.t ? (b.y - a.y) / (b.t - a.t) : 0; // px/ms, positiv = nach unten
+      overlay.classList.remove('zieht');
+      if (weg > sheet.offsetHeight * 0.3 || (tempo > 0.5 && weg > 12)) {
+        sheet.style.transform = '';
+        dismissSheet({ weg: Math.max(0, weg), tempo: Math.max(0, tempo) });
+        return;
+      }
+      // Zurueckfedern
+      overlay.classList.add('federt');
+      sheet.style.transform = '';
+      overlay.style.removeProperty('--dunkel');
+      sheet.animate([{ transform: `translateY(${weg}px)` }, { transform: 'none' }],
+        { duration: 380, easing: EASE });
+      setTimeout(() => overlay.classList.remove('federt'), 400);
+    };
+    sheet.addEventListener('touchend', loslassen);
+    sheet.addEventListener('touchcancel', loslassen);
   }
 
   /* Person anlegen / bearbeiten. `draft` bewahrt Eingaben beim Abstecher

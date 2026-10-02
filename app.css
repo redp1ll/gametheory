@@ -586,7 +586,8 @@ svg { display: block; }
    hinter dem Fenster durch. */
 .scrim::before {
   content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.4);
-  animation: fadeIn .3s var(--ease) both;
+  opacity: var(--dunkel, 1);
+  animation: fadeIn .3s var(--ease) backwards;
 }
 /* Hinaus: Abdunkelung verblasst, Fenster faehrt nach unten. */
 .scrim.raus { pointer-events: none; }
@@ -594,7 +595,14 @@ svg { display: block; }
 .scrim.raus .sheet { animation: sheetDown .3s var(--ease) both; }
 /* Ein Fenster loest ein anderes ab: Abdunkelung bleibt, Fenster setzt sich. */
 .scrim.tausch::before { animation: none; }
-.scrim.tausch .sheet { animation: sheetTausch .32s var(--ease) both; }
+.scrim.tausch .sheet { animation: sheetTausch .32s var(--ease) backwards; }
+/* Wischen: Das Fenster haengt am Finger, die Abdunkelung folgt --dunkel. */
+.scrim.zieht .sheet { transition: none; }
+.scrim.federt::before { transition: opacity .38s var(--ease); }
+/* Nach dem Wischen faehrt es per Skript weiter; die CSS-Animationen fuer
+   das normale Schliessen bleiben dann aus. */
+.scrim.gewischt .sheet { animation: none; }
+.scrim.gewischt::before { animation: none; transition: opacity var(--dauer, .25s) linear; opacity: 0; }
 @keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
 @keyframes sheetDown { from { transform: none } to { transform: translateY(100%) } }
 @keyframes sheetTausch { from { transform: translateY(22px) } to { transform: none } }
@@ -606,12 +614,13 @@ svg { display: block; }
   padding: 10px 18px calc(20px + var(--safe-b));
   box-shadow: var(--shadow-3);
   max-height: 92vh; overflow-y: auto;
-  animation: sheetUp .44s var(--ease) both;
+  animation: sheetUp .44s var(--ease) backwards;
+  overscroll-behavior: contain;
 }
 @keyframes sheetUp { from { transform: translateY(100%) } to { transform: none } }
 @media (min-width: 560px) {
   .scrim { align-items: center; }
-  .sheet { border-radius: var(--r-xl); animation: popIn .3s var(--ease) both; }
+  .sheet { border-radius: var(--r-xl); animation: popIn .3s var(--ease) backwards; }
   .scrim.raus .sheet { animation: popOut .24s var(--ease) both; }
   @keyframes popIn { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: none } }
   @keyframes popOut { from { opacity: 1; transform: none } to { opacity: 0; transform: scale(.96) } }
