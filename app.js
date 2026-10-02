@@ -221,19 +221,29 @@
   // Suche oeffnen und schliessen. focus() muss im selben Antippen geschehen,
   // sonst blendet iOS die Tastatur nicht ein.
   const nav = document.getElementById('nav');
+  const root = document.documentElement;
   function sucheOeffnen() {
-    nav.classList.add('suche');
+    root.classList.add('suche-offen');
     searchInput.focus();
   }
   function sucheSchliessen() {
     searchInput.value = '';
     searchInput.blur();
-    nav.classList.remove('suche');
+    root.classList.remove('suche-offen');
     renderList();
   }
   document.getElementById('searchBtn').addEventListener('click', sucheOeffnen);
-  document.getElementById('searchCancel').addEventListener('click', sucheSchliessen);
+  document.getElementById('searchClose').addEventListener('click', sucheSchliessen);
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') sucheSchliessen(); });
+  // Tastatur weg ohne Eingabe: Suche schliesst sich. Mit Eingabe bleibt die
+  // Pille unten stehen, damit der aktive Filter sichtbar und abschaltbar ist.
+  searchInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!searchInput.value.trim() && document.activeElement !== searchInput) {
+        root.classList.remove('suche-offen');
+      }
+    }, 150);
+  });
   document.getElementById('searchClear').addEventListener('click', () => {
     searchInput.value = ''; renderList(); searchInput.focus();
   });
@@ -247,6 +257,8 @@
     if (!vv) return;
     vp.style.height = vv.height + 'px';
     vp.style.transform = `translateY(${vv.offsetTop}px)`;
+    const verdeckt = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.classList.toggle('kb-open', verdeckt > 80);
   }
   if (vv) {
     vv.addEventListener('resize', followViewport);
