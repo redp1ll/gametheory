@@ -247,8 +247,10 @@ svg { display: block; }
 /* Bei offener Tastatur entfaellt der Abstand zum Home-Balken; er wuerde nur
    eine Luecke zwischen Suche und Tastatur erzeugen. */
 :root.kb-open .search-dock { padding-bottom: 10px; }
-:root.suche-offen .search-dock { display: flex; animation: dockRein .28s var(--ease) both; }
-@keyframes dockRein { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+:root.suche-offen .search-dock { display: flex; animation: dockRein .34s var(--ease) both; }
+@keyframes dockRein { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+:root.suche-offen .search-dock.raus { animation: dockRaus .24s var(--ease) both; pointer-events: none; }
+@keyframes dockRaus { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(16px) scale(.98); } }
 :root.suche-offen .wrap#listView { padding-bottom: calc(84px + var(--safe-b)); }
 .search {
   flex: 1; min-width: 0; position: relative; display: flex; align-items: center; gap: 10px;
@@ -343,9 +345,19 @@ svg { display: block; }
   position: fixed; inset: 0; z-index: 50; background: var(--bg);
   overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   padding-bottom: calc(52px + var(--safe-b));
-  animation: sheetIn .38s var(--ease);
+  /* Schatten an der linken Kante gibt beim Hereinschieben Tiefe; liegt die
+     Seite ganz auf, faellt er ausserhalb des Bildschirms. */
+  box-shadow: -10px 0 30px rgba(0,0,0,.14);
+  animation: seiteRein .44s var(--ease) both;
 }
-@keyframes sheetIn { from { opacity: 0; transform: translateY(14px) scale(.99); } to { opacity: 1; transform: none; } }
+.detail.raus { animation: seiteRaus .34s var(--ease) both; pointer-events: none; }
+@keyframes seiteRein { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes seiteRaus { from { transform: none; } to { transform: translateX(100%); } }
+/* Die Liste weicht beim Hereinschieben ein Stueck nach links und dunkelt
+   leicht ab, wie in iOS. */
+#appShell { transition: transform .44s var(--ease), opacity .44s var(--ease); }
+:root.detail-offen #appShell { transform: translateX(-28%); opacity: .6; }
+:root.ohne-uebergang #appShell { transition: none; }
 
 .detail-nav {
   position: sticky; top: 0; z-index: 10;
@@ -567,25 +579,42 @@ svg { display: block; }
 /* ---------- Sheets / Dialoge ---------- */
 .scrim {
   position: fixed; inset: 0; z-index: 90;
-  background: rgba(0,0,0,.4);
-  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   display: flex; align-items: flex-end; justify-content: center;
-  animation: fadeIn .24s var(--ease);
 }
+/* Nur die Abdunkelung blendet ein und aus, das Fenster selbst bleibt dabei
+   deckend. Wuerde der ganze Hintergrund ausgeblendet, schimmerte der Inhalt
+   hinter dem Fenster durch. */
+.scrim::before {
+  content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.4);
+  animation: fadeIn .3s var(--ease) both;
+}
+/* Hinaus: Abdunkelung verblasst, Fenster faehrt nach unten. */
+.scrim.raus { pointer-events: none; }
+.scrim.raus::before { animation: fadeOut .3s var(--ease) both; }
+.scrim.raus .sheet { animation: sheetDown .3s var(--ease) both; }
+/* Ein Fenster loest ein anderes ab: Abdunkelung bleibt, Fenster setzt sich. */
+.scrim.tausch::before { animation: none; }
+.scrim.tausch .sheet { animation: sheetTausch .32s var(--ease) both; }
+@keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+@keyframes sheetDown { from { transform: none } to { transform: translateY(100%) } }
+@keyframes sheetTausch { from { transform: translateY(22px) } to { transform: none } }
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 .sheet {
+  position: relative;
   width: 100%; max-width: 520px; background: var(--bg-elevated);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: 10px 18px calc(20px + var(--safe-b));
   box-shadow: var(--shadow-3);
   max-height: 92vh; overflow-y: auto;
-  animation: sheetUp .42s var(--ease);
+  animation: sheetUp .44s var(--ease) both;
 }
 @keyframes sheetUp { from { transform: translateY(100%) } to { transform: none } }
 @media (min-width: 560px) {
   .scrim { align-items: center; }
-  .sheet { border-radius: var(--r-xl); animation: popIn .3s var(--ease); }
+  .sheet { border-radius: var(--r-xl); animation: popIn .3s var(--ease) both; }
+  .scrim.raus .sheet { animation: popOut .24s var(--ease) both; }
   @keyframes popIn { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: none } }
+  @keyframes popOut { from { opacity: 1; transform: none } to { opacity: 0; transform: scale(.96) } }
 }
 .grabber { width: 36px; height: 5px; border-radius: 100px; background: var(--fill-2); margin: 0 auto 14px; }
 .sheet h3 { font-size: 20px; letter-spacing: -0.024em; }
@@ -710,8 +739,19 @@ svg { display: block; }
 .tl-topic { font-size: 13px; padding: 3px 9px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .tl-chev { color: var(--label-3); margin-top: 3px; transition: transform .22s var(--ease); }
 .tl-item.offen .tl-chev { transform: rotate(90deg); }
-.tl-body { display: none; padding: 0 14px 14px 50px; }
-.tl-item.offen .tl-body { display: block; }
+/* Aufklappen ueber die Zeilenhoehe des Grids: 0fr -> 1fr laesst die Hoehe
+   weich mitwachsen, ohne sie vorher messen zu muessen. Eingeklappt ist der
+   Inhalt unsichtbar und nicht antippbar. */
+.tl-body {
+  display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden;
+  transition: grid-template-rows .32s var(--ease), opacity .18s var(--ease), visibility 0s linear .32s;
+}
+.tl-item.offen .tl-body {
+  grid-template-rows: 1fr; opacity: 1; visibility: visible;
+  transition: grid-template-rows .38s var(--ease), opacity .3s var(--ease) .06s, visibility 0s;
+}
+.tl-inner { min-height: 0; overflow: hidden; padding: 0 14px 0 50px; }
+.tl-inner > :last-child { margin-bottom: 12px; }
 .tl-text {
   font-size: 15px; color: var(--label-2); line-height: 1.5;
   letter-spacing: -0.012em; white-space: pre-wrap; margin-bottom: 10px;
@@ -784,5 +824,21 @@ svg { display: block; }
 }
 .toast.error { color: var(--no-text); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.toast.raus { animation: toastOut .26s var(--ease) both; }
+@keyframes toastOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px); } }
 
 .btn:disabled { opacity: .6; }
+
+/* ---------- Ansichtswechsel ---------- */
+.einblenden { animation: fadeIn .32s var(--ease) both; }
+
+/* ---------- Weniger Bewegung ----------
+   Wer in iOS "Bewegung reduzieren" eingeschaltet hat, bekommt alle Wechsel
+   ohne Animation. Nur die Ladeanzeige dreht sich weiter. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-delay: 0s !important;
+    transition-duration: .01ms !important; transition-delay: 0s !important;
+  }
+  .spinner { animation-duration: 1.2s !important; }
+}
