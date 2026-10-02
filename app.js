@@ -218,6 +218,22 @@
     }
   }
   searchInput.addEventListener('input', renderList);
+  // Suche oeffnen und schliessen. focus() muss im selben Antippen geschehen,
+  // sonst blendet iOS die Tastatur nicht ein.
+  const nav = document.getElementById('nav');
+  function sucheOeffnen() {
+    nav.classList.add('suche');
+    searchInput.focus();
+  }
+  function sucheSchliessen() {
+    searchInput.value = '';
+    searchInput.blur();
+    nav.classList.remove('suche');
+    renderList();
+  }
+  document.getElementById('searchBtn').addEventListener('click', sucheOeffnen);
+  document.getElementById('searchCancel').addEventListener('click', sucheSchliessen);
+  searchInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') sucheSchliessen(); });
   document.getElementById('searchClear').addEventListener('click', () => {
     searchInput.value = ''; renderList(); searchInput.focus();
   });
@@ -231,11 +247,6 @@
     if (!vv) return;
     vp.style.height = vv.height + 'px';
     vp.style.transform = `translateY(${vv.offsetTop}px)`;
-    // Bei eingeblendeter Tastatur entfaellt der Abstand zum Geraeterand:
-    // Der Bereich ist von der Tastatur verdeckt, der Abstand wuerde nur eine
-    // Luecke zwischen Suchfeld und Tastatur erzeugen.
-    const verdeckt = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    document.documentElement.classList.toggle('kb-open', verdeckt > 80);
   }
   if (vv) {
     vv.addEventListener('resize', followViewport);
@@ -244,7 +255,6 @@
   }
 
   /* Feine Trennlinie unter der Kopfzeile, sobald die Liste gescrollt wird */
-  const nav = document.getElementById('nav');
   const listScroller = document.getElementById('listView');
   const onScroll = () => nav.classList.toggle('stuck', listScroller.scrollTop > 4);
   listScroller.addEventListener('scroll', onScroll, { passive: true });
