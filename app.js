@@ -55,13 +55,56 @@
   const people = () => Store.people;
   function byId(id) { return Store.people.find((p) => p.id === id); }
 
+  /* ---------- Bewegung ----------
+     Alles, was verschwindet, laeuft erst seine Ausgangsanimation und wird
+     dann ausgeblendet. Wird dasselbe Element vorher wieder geoeffnet,
+     verfaellt das Ausblenden. Jede Animation bekommt eine eigene Marke,
+     damit ein verspaeteter Abschluss nie eine neuere Animation beendet. */
+  const EASE = 'cubic-bezier(.32,.72,0,1)';
+  const wenigBewegung = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let bewegungsMarke = 0;
+  function ausblenden(node, klasse, fertig) {
+    const marke = ++bewegungsMarke;
+    node._raus = marke;
+    node.classList.add(klasse);
+    const ende = () => {
+      if (node._raus !== marke) return;
+      node._raus = null;
+      node.classList.remove(klasse);
+      fertig();
+    };
+    if (wenigBewegung()) { ende(); return; }
+    node.addEventListener('animationend', function abschluss(e) {
+      if (e.target !== node) return;
+      node.removeEventListener('animationend', abschluss);
+      ende();
+    });
+    setTimeout(ende, 600); // Sicherheitsnetz, falls animationend ausbleibt
+  }
+  function ausblendenAbbrechen(node, klasse) {
+    node._raus = null;
+    node.classList.remove(klasse);
+  }
+  // Einblenden einer ganzen Ansicht (Anmeldung, App).
+  function einblenden(node) {
+    node.classList.add('einblenden');
+    node.addEventListener('animationend', function abschluss(e) {
+      if (e.target !== node) return;
+      node.removeEventListener('animationend', abschluss);
+      node.classList.remove('einblenden');
+    });
+  }
+
   // Kurze Rueckmeldung am unteren Rand.
   const toastRoot = document.getElementById('toastRoot');
   let toastTimer = null;
   function toast(message, kind) {
     toastRoot.innerHTML = `<div class="toast${kind === 'error' ? ' error' : ''}">${esc(message)}</div>`;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toastRoot.innerHTML = ''; }, 3200);
+    toastTimer = setTimeout(() => {
+      const t = toastRoot.firstElementChild;
+      if (t) ausblenden(t, 'raus', () => t.remove());
+    }, 3200);
   }
   // Schreibzugriffe kapseln: bei Fehlern den Serverstand wiederherstellen.
   async function persist(action, failureMessage) {
@@ -222,14 +265,20 @@
   // sonst blendet iOS die Tastatur nicht ein.
   const nav = document.getElementById('nav');
   const root = document.documentElement;
+  const searchDock = document.getElementById('searchDock');
   function sucheOeffnen() {
+    ausblendenAbbrechen(searchDock, 'raus');
     root.classList.add('suche-offen');
     searchInput.focus();
+  }
+  function sucheZu() {
+    if (!root.classList.contains('suche-offen') || searchDock._raus) return;
+    ausblenden(searchDock, 'raus', () => root.classList.remove('suche-offen'));
   }
   function sucheSchliessen() {
     searchInput.value = '';
     searchInput.blur();
-    root.classList.remove('suche-offen');
+    sucheZu();
     renderList();
   }
   document.getElementById('searchBtn').addEventListener('click', sucheOeffnen);
@@ -239,9 +288,7 @@
   // Pille unten stehen, damit der aktive Filter sichtbar und abschaltbar ist.
   searchInput.addEventListener('blur', () => {
     setTimeout(() => {
-      if (!searchInput.value.trim() && document.activeElement !== searchInput) {
-        root.classList.remove('suche-offen');
-      }
+      if (!searchInput.value.trim() && document.activeElement !== searchInput) sucheZu();
     }, 150);
   });
   document.getElementById('searchClear').addEventListener('click', () => {
@@ -253,12 +300,20 @@
      Oberflaeche, weil das System zusaetzlich selbst scrollt. */
   const vp = document.getElementById('vp');
   const vv = window.visualViewport;
+  // Hoechstens einmal pro Bild und nur bei echter Aenderung schreiben: iOS
+  // meldet beim Ein- und Ausfahren der Tastatur viele Ereignisse, und jedes
+  // Schreiben der Hoehe zwingt die ganze Seite zur Neuberechnung.
+  let vpBild = 0, vpHoehe = -1, vpVersatz = -1;
   function followViewport() {
-    if (!vv) return;
-    vp.style.height = vv.height + 'px';
-    vp.style.transform = `translateY(${vv.offsetTop}px)`;
-    const verdeckt = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    document.documentElement.classList.toggle('kb-open', verdeckt > 80);
+    if (!vv || vpBild) return;
+    vpBild = requestAnimationFrame(() => {
+      vpBild = 0;
+      const h = Math.round(vv.height), y = Math.round(vv.offsetTop);
+      if (h !== vpHoehe) { vp.style.height = h + 'px'; vpHoehe = h; }
+      if (y !== vpVersatz) { vp.style.transform = `translateY(${y}px)`; vpVersatz = y; }
+      const verdeckt = Math.max(0, window.innerHeight - h - y);
+      document.documentElement.classList.toggle('kb-open', verdeckt > 80);
+    });
   }
   if (vv) {
     vv.addEventListener('resize', followViewport);
@@ -275,7 +330,15 @@
   /* ---------- Detailansicht ---------- */
   const detailView = document.getElementById('detailView');
 
+  /* Wie die Navigation in iOS: Die Personenseite schiebt sich von rechts
+     herein, die Liste weicht ein Stueck nach links. Zurueck laeuft es
+     umgekehrt. Nach einer Wischgeste des Browsers hat Safari den Wechsel
+     schon selbst gezeigt; dann schliesst die Seite ohne zweite Animation. */
+  let zurueckPerApp = false;
+  function zurueck() { zurueckPerApp = true; history.back(); }
   function openDetail(id) {
+    ausblendenAbbrechen(detailView, 'raus');
+    document.documentElement.classList.add('detail-offen');
     verlaufOffen = false;
     offeneRunden.clear();
     currentId = id;
@@ -285,10 +348,21 @@
     detailView.scrollTop = 0;
     history.pushState({ detail: id }, '');
   }
-  function closeDetail() {
-    detailView.classList.add('hidden');
+  function closeDetail(animiert = true) {
+    const r = document.documentElement;
     detailView.setAttribute('aria-hidden', 'true');
     currentId = null;
+    if (animiert) {
+      r.classList.remove('detail-offen');
+      ausblenden(detailView, 'raus', () => detailView.classList.add('hidden'));
+      return;
+    }
+    // Ohne Animation: auch die Liste springt ohne Uebergang an ihren Platz.
+    r.classList.add('ohne-uebergang');
+    r.classList.remove('detail-offen');
+    detailView.classList.add('hidden');
+    void detailView.offsetWidth;
+    r.classList.remove('ohne-uebergang');
   }
 
   function renderDetail(flashId) {
@@ -317,8 +391,10 @@
               <span class="tl-chev">${ICON.chevron()}</span>
             </button>
             <div class="tl-body">
-              ${r.details ? `<p class="tl-text">${esc(r.details)}</p>` : ''}
-              <button class="tl-edit" data-round="${r.id}">Bearbeiten</button>
+              <div class="tl-inner">
+                ${r.details ? `<p class="tl-text">${esc(r.details)}</p>` : ''}
+                <button class="tl-edit" data-round="${r.id}">Bearbeiten</button>
+              </div>
             </div>
           </div>`;
         }).join('')
@@ -400,7 +476,7 @@
         </div>
       </div>`;
 
-    detailView.querySelector('#backBtn').addEventListener('click', () => history.back());
+    detailView.querySelector('#backBtn').addEventListener('click', zurueck);
     detailView.querySelector('#deleteBtn').addEventListener('click', () => confirmDeletePerson(p.id));
     detailView.querySelector('#identRow').addEventListener('click', () => openPersonSheet(p));
     detailView.querySelector('#stratRow').addEventListener('click', () => openStrategyPicker(p));
@@ -419,9 +495,21 @@
     const toggle = detailView.querySelector('#verlaufToggle');
     if (toggle) toggle.addEventListener('click', () => {
       verlaufOffen = !verlaufOffen;
-      detailView.querySelector('#verlaufRows').classList.toggle('zu', !verlaufOffen);
       toggle.textContent = verlaufOffen ? 'Weniger anzeigen' : 'Mehr anzeigen';
       toggle.setAttribute('aria-expanded', String(verlaufOffen));
+      // Die Karte gleitet auf die neue Hoehe. Beim Zuklappen bleiben die
+      // Zeilen sichtbar, bis die Karte sie verdeckt hat.
+      const rows = detailView.querySelector('#verlaufRows');
+      if (rows._anim) rows._anim.cancel();
+      const von = rows.offsetHeight;
+      rows.classList.add('zu');
+      const zuHoehe = rows.offsetHeight;
+      rows.classList.remove('zu');
+      const nach = verlaufOffen ? rows.offsetHeight : zuHoehe;
+      if (wenigBewegung() || von === nach) { rows.classList.toggle('zu', !verlaufOffen); return; }
+      rows._anim = rows.animate([{ height: von + 'px' }, { height: nach + 'px' }],
+        { duration: verlaufOffen ? 380 : 320, easing: EASE });
+      rows._anim.onfinish = () => { rows._anim = null; rows.classList.toggle('zu', !verlaufOffen); };
     });
 
     requestAnimationFrame(() => {
@@ -473,20 +561,28 @@
   let dismissHandler = null;
   // onDismiss wird nur beim Schließen durch den Nutzer aufgerufen (Hintergrund,
   // Escape, [data-close]) – nicht, wenn ein Sheet ein anderes öffnet.
+  // Loest ein Fenster ein anderes ab (etwa "Strategie waehlen" aus "Neue
+  // Person"), bleibt der Hintergrund stehen und das neue Fenster setzt sich
+  // nur kurz, statt abzufallen und neu hochzufahren.
   function openSheet(inner, onDismiss) {
-    const overlay = el(`<div class="scrim"><div class="sheet"><div class="grabber"></div>${inner}</div></div>`);
+    const tausch = !!modalRoot.querySelector('.scrim');
+    const overlay = el(`<div class="scrim${tausch ? ' tausch' : ''}"><div class="sheet"><div class="grabber"></div>${inner}</div></div>`);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) dismissSheet(); });
     overlay.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', dismissSheet));
-    modalRoot.innerHTML = '';
-    modalRoot.appendChild(overlay);
+    modalRoot.replaceChildren(overlay);
     dismissHandler = onDismiss || null;
     return overlay;
   }
-  function closeSheet() { dismissHandler = null; modalRoot.innerHTML = ''; }
+  function sheetWeg() {
+    const overlay = modalRoot.querySelector('.scrim:not(.raus)');
+    if (!overlay) return;
+    ausblenden(overlay, 'raus', () => overlay.remove());
+  }
+  function closeSheet() { dismissHandler = null; sheetWeg(); }
   function dismissSheet() {
     const handler = dismissHandler;
     dismissHandler = null;
-    modalRoot.innerHTML = '';
+    sheetWeg();
     if (handler) handler();
   }
 
@@ -765,7 +861,7 @@
       btn.disabled = true; btn.textContent = 'Wird gelöscht…';
       const ok = await persist(() => Store.deletePerson(id), 'Person konnte nicht gelöscht werden.');
       if (!ok) { btn.disabled = false; btn.textContent = 'Löschen'; return; }
-      closeSheet(); history.back(); renderList();
+      closeSheet(); zurueck(); renderList();
     });
   }
 
@@ -940,11 +1036,15 @@
   document.getElementById('addBtn').addEventListener('click', () => openPersonSheet(null));
   document.getElementById('menuBtn').addEventListener('click', openMainMenu);
   document.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => openPersonSheet(null)));
-  window.addEventListener('popstate', () => { if (!detailView.classList.contains('hidden')) closeDetail(); });
+  window.addEventListener('popstate', () => {
+    const animiert = zurueckPerApp;
+    zurueckPerApp = false;
+    if (!detailView.classList.contains('hidden') && !detailView._raus) closeDetail(animiert);
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (modalRoot.innerHTML) dismissSheet();
-    else if (!detailView.classList.contains('hidden')) history.back();
+    if (modalRoot.querySelector('.scrim:not(.raus)')) dismissSheet();
+    else if (!detailView.classList.contains('hidden') && !detailView._raus) zurueck();
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getTheme() === 'system') applyTheme('system');
@@ -961,8 +1061,10 @@
 
   function show(view) {
     for (const [node, on] of [[bootView, view === 'boot'], [authView, view === 'auth'], [appShell, view === 'app']]) {
+      const warVerborgen = node.classList.contains('hidden');
       node.classList.toggle('hidden', !on);
       node.setAttribute('aria-hidden', String(!on));
+      if (on && warVerborgen && node !== bootView) einblenden(node);
     }
   }
   function showAuth() {
